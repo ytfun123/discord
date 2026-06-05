@@ -761,15 +761,14 @@
         const globalStore = {
             users: [],
             messages: {
-                'global': [] // Initialize global chat
+                'global': []
             },
             groups: [],
             friends: {}
         };
 
-        let lastMessageCount = 0; // Track last message count to prevent re-renders
+        let lastMessageCount = 0;
 
-        // Initialize from localStorage
         function initializeStore() {
             const stored = localStorage.getItem('globalStore');
             if (stored) {
@@ -780,7 +779,6 @@
                     globalStore.friends = data.friends || {};
                     globalStore.messages = data.messages || { 'global': [] };
                     
-                    // Ensure global key exists
                     if (!globalStore.messages['global']) {
                         globalStore.messages['global'] = [];
                     }
@@ -790,33 +788,43 @@
             }
         }
 
-        // Save store to localStorage
         function saveStore() {
             localStorage.setItem('globalStore', JSON.stringify(globalStore));
         }
 
-        // ============ USER VARIABLES ============
         let currentUser = null;
         let currentChat = 'global';
 
-        // Initialize
-        initializeStore();
-        document.getElementById('signupForm').addEventListener('submit', handleSignUp);
-        document.getElementById('signinForm').addEventListener('submit', handleSignIn);
-        document.getElementById('recoveryForm').addEventListener('submit', handleRecovery);
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-        document.getElementById('settingsForm').addEventListener('submit', handleSettingsSave);
-        document.getElementById('createGroupForm').addEventListener('submit', handleCreateGroup);
-
-        // Check if already logged in
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            showChat();
+        // ============ UTILITY FUNCTIONS ============
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
 
+        function showAlert(elementId, message, isSuccess = false) {
+            const alertDiv = document.getElementById(elementId);
+            if (!alertDiv) return;
+            alertDiv.innerHTML = `<div class="alert ${isSuccess ? 'success' : ''}">${message}</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+            }, 4000);
+        }
+
+        function generateUserId() {
+            return 'USER_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        function generateGroupCode() {
+            return 'GROUP_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        }
+
+        // ============ AUTHENTICATION FUNCTIONS ============
         function switchToSignUp() {
             document.getElementById('welcomeMenu').classList.remove('active');
             document.getElementById('signinContainer').classList.remove('active');
@@ -835,22 +843,6 @@
             document.getElementById('signinContainer').classList.remove('active');
             document.getElementById('signupContainer').classList.remove('active');
             document.getElementById('recoveryContainer').classList.add('active');
-        }
-
-        function showAlert(elementId, message, isSuccess = false) {
-            const alertDiv = document.getElementById(elementId);
-            alertDiv.innerHTML = `<div class="alert ${isSuccess ? 'success' : ''}">${message}</div>`;
-            setTimeout(() => {
-                alertDiv.innerHTML = '';
-            }, 4000);
-        }
-
-        function generateUserId() {
-            return 'USER_' + Math.random().toString(36).substr(2, 9).toUpperCase();
-        }
-
-        function generateGroupCode() {
-            return 'GROUP_' + Math.random().toString(36).substr(2, 6).toUpperCase();
         }
 
         function handleSignUp(e) {
@@ -938,28 +930,62 @@
             }, 3000);
         }
 
-        function showChat() {
-            document.getElementById('welcomeMenu').classList.remove('active');
-            document.getElementById('signupContainer').classList.remove('active');
-            document.getElementById('signinContainer').classList.remove('active');
-            document.getElementById('recoveryContainer').classList.remove('active');
-            document.getElementById('chatContainer').classList.add('active');
-
-            document.getElementById('currentUsername').textContent = currentUser.username;
-            document.getElementById('currentUserId').textContent = `ID: ${currentUser.id}`;
-
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
             currentChat = 'global';
+            document.getElementById('chatContainer').classList.remove('active');
+            document.getElementById('welcomeMenu').classList.add('active');
+            document.getElementById('signupForm').reset();
+            document.getElementById('signinForm').reset();
+        }
+
+        // ============ CHAT FUNCTIONS ============
+        function selectChat(chatId) {
+            currentChat = chatId;
             lastMessageCount = 0;
             displayMessages();
-            displayFriends();
-            displayGroups();
+            updateChatHeader();
+            updateChatItemActiveState();
+        }
+
+        function updateChatHeader() {
+            const chatTitle = document.getElementById('chatTitle');
+            const chatDescription = document.getElementById('chatDescription');
+
+            if (currentChat === 'global') {
+                chatTitle.textContent = '🌍 Global Chat';
+                chatDescription.textContent = 'Everyone on the platform';
+            } else if (currentChat.startsWith('friend_')) {
+                const friendId = currentChat.replace('friend_', '');
+                const friend = globalStore.users.find(u => u.id === friendId);
+                chatTitle.textContent = friend?.username || 'Unknown User';
+                chatDescription.textContent = 'Direct Message';
+            } else if (currentChat.startsWith('group_')) {
+                const groupId = currentChat.replace('group_', '');
+                const group = globalStore.groups.find(g => g.id === groupId);
+                chatTitle.textContent = group?.name || 'Unknown Group';
+                chatDescription.textContent = `Group • ${group?.members?.length || 0} members`;
+            }
+        }
+
+        function updateChatItemActiveState() {
+            document.querySelectorAll('.chat-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            document.querySelectorAll('.chat-item').forEach(item => {
+                const itemChatId = item.getAttribute('data-chat-id');
+                if (itemChatId === currentChat) {
+                    item.classList.add('active');
+                }
+            });
         }
 
         function displayMessages() {
             const messagesArea = document.getElementById('messagesArea');
             let messages = [];
 
-            // Get messages based on current chat
             if (currentChat === 'global') {
                 messages = globalStore.messages['global'] || [];
             } else if (currentChat.startsWith('friend_')) {
@@ -972,7 +998,6 @@
                 messages = globalStore.messages[`group_${groupId}`] || [];
             }
 
-            // Only update if message count changed
             if (messages.length === lastMessageCount && messagesArea.children.length > 1) {
                 return;
             }
@@ -1004,104 +1029,200 @@
         }
 
         function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
+            const messageInput = document.getElementById('messageInput');
+            const text = messageInput.value.trim();
 
-            if (!text) return;
+            if (!text) {
+                return;
+            }
+
+            if (!currentUser) {
+                showAlert('globalAlert', 'You must be logged in to send messages');
+                return;
+            }
 
             const message = {
-                id: Date.now() + Math.random(),
+                id: 'MSG_' + Math.random().toString(36).substr(2, 9),
                 userId: currentUser.id,
                 text: text,
                 timestamp: new Date().toISOString()
             };
 
-            let key = 'global';
             if (currentChat === 'global') {
-                key = 'global';
+                if (!globalStore.messages['global']) {
+                    globalStore.messages['global'] = [];
+                }
+                globalStore.messages['global'].push(message);
             } else if (currentChat.startsWith('friend_')) {
                 const friendId = currentChat.replace('friend_', '');
-                key = `dm_${currentUser.id}_${friendId}`;
+                const key = `dm_${currentUser.id}_${friendId}`;
+                if (!globalStore.messages[key]) {
+                    globalStore.messages[key] = [];
+                }
+                globalStore.messages[key].push(message);
             } else if (currentChat.startsWith('group_')) {
                 const groupId = currentChat.replace('group_', '');
-                key = `group_${groupId}`;
+                const key = `group_${groupId}`;
+                if (!globalStore.messages[key]) {
+                    globalStore.messages[key] = [];
+                }
+                globalStore.messages[key].push(message);
             }
 
-            if (!globalStore.messages[key]) {
-                globalStore.messages[key] = [];
-            }
-
-            globalStore.messages[key].push(message);
             saveStore();
-
-            input.value = '';
-            lastMessageCount = 0; // Reset to force refresh
+            messageInput.value = '';
             displayMessages();
         }
 
+        function showChat() {
+            document.getElementById('welcomeMenu').classList.remove('active');
+            document.getElementById('signupContainer').classList.remove('active');
+            document.getElementById('signinContainer').classList.remove('active');
+            document.getElementById('recoveryContainer').classList.remove('active');
+            document.getElementById('chatContainer').classList.add('active');
+
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            document.getElementById('currentUserId').textContent = `ID: ${currentUser.id}`;
+
+            currentChat = 'global';
+            lastMessageCount = 0;
+            displayMessages();
+            displayFriends();
+            displayGroups();
+            updateChatHeader();
+        }
+
+        // ============ FRIENDS FUNCTIONS ============
         function addFriend() {
-            const friendUsername = document.getElementById('friendIdInput').value.trim();
-            const alertDiv = document.getElementById('friendAlert');
+            const friendInput = document.getElementById('friendIdInput');
+            const searchTerm = friendInput.value.trim();
 
-            if (!friendUsername) {
-                alertDiv.textContent = 'Enter a username';
+            if (!searchTerm) {
+                showAlert('friendAlert', 'Please enter a username');
                 return;
             }
 
-            const friend = globalStore.users.find(u => u.username.toLowerCase() === friendUsername.toLowerCase());
-            
+            const friend = globalStore.users.find(u => 
+                u.username.toLowerCase() === searchTerm.toLowerCase() &&
+                u.id !== currentUser.id
+            );
+
             if (!friend) {
-                alertDiv.textContent = 'User not found';
+                showAlert('friendAlert', 'User not found');
                 return;
-            }
-
-            if (friend.id === currentUser.id) {
-                alertDiv.textContent = "You can't add yourself";
-                return;
-            }
-
-            if (!globalStore.friends[currentUser.id]) {
-                globalStore.friends[currentUser.id] = [];
             }
 
             if (globalStore.friends[currentUser.id].includes(friend.id)) {
-                alertDiv.textContent = 'Already a friend';
+                showAlert('friendAlert', 'Already friends with this user');
                 return;
             }
 
             globalStore.friends[currentUser.id].push(friend.id);
+            if (!globalStore.friends[friend.id]) {
+                globalStore.friends[friend.id] = [];
+            }
+            globalStore.friends[friend.id].push(currentUser.id);
+            
             saveStore();
-
-            alertDiv.textContent = `Added ${friend.username}!`;
-            document.getElementById('friendIdInput').value = '';
-
+            friendInput.value = '';
+            showAlert('friendAlert', `Added ${friend.username} as a friend!`, true);
             displayFriends();
-
-            setTimeout(() => {
-                alertDiv.textContent = '';
-            }, 2000);
         }
 
         function displayFriends() {
             const friendsList = document.getElementById('friendsList');
-            const userFriends = globalStore.friends[currentUser.id] || [];
+            const friendIds = globalStore.friends[currentUser.id] || [];
 
-            if (userFriends.length === 0) {
+            if (friendIds.length === 0) {
                 friendsList.innerHTML = '<p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>';
                 return;
             }
 
-            friendsList.innerHTML = userFriends.map(friendId => {
+            const friendsHTML = friendIds.map(friendId => {
                 const friend = globalStore.users.find(u => u.id === friendId);
                 if (!friend) return '';
 
+                const isChatActive = currentChat === `friend_${friendId}`;
                 return `
-                    <div class="chat-item ${currentChat === `friend_${friendId}` ? 'active' : ''}" onclick="selectChat('friend_${friendId}')">
-                        <div><strong>${friend.username}</strong></div>
-                        <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">ID: ${friendId}</div>
+                    <div class="chat-item ${isChatActive ? 'active' : ''}" 
+                         data-chat-id="friend_${friendId}"
+                         onclick="selectChat('friend_${friendId}')">
+                        👤 ${escapeHtml(friend.username)}
                     </div>
                 `;
-            }).join('');
+            }).filter(html => html !== '').join('');
+
+            friendsList.innerHTML = friendsHTML || '<p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>';
+        }
+
+        // ============ GROUPS FUNCTIONS ============
+        function openCreateGroup() {
+            document.getElementById('createGroupModal').classList.add('active');
+            document.getElementById('generatedCode').value = generateGroupCode();
+        }
+
+        function closeCreateGroup() {
+            document.getElementById('createGroupModal').classList.remove('active');
+            document.getElementById('createGroupForm').reset();
+            document.getElementById('generatedCode').value = '';
+        }
+
+        function handleCreateGroup(e) {
+            e.preventDefault();
+
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupCode = document.getElementById('generatedCode').value.trim();
+
+            if (!groupName) {
+                showAlert('groupAlert', 'Please enter a group name');
+                return;
+            }
+
+            const newGroup = {
+                id: groupCode,
+                name: groupName,
+                code: groupCode,
+                createdBy: currentUser.id,
+                members: [currentUser.id],
+                createdAt: new Date().toISOString()
+            };
+
+            globalStore.groups.push(newGroup);
+            globalStore.messages[`group_${groupCode}`] = [];
+            saveStore();
+
+            document.getElementById('createGroupForm').reset();
+            closeCreateGroup();
+            showAlert('groupAlert', `Group "${groupName}" created!`, true);
+            displayGroups();
+        }
+
+        function joinGroupByCode() {
+            const groupCodeInput = document.getElementById('groupCodeInput');
+            const groupCode = groupCodeInput.value.trim().toUpperCase();
+
+            if (!groupCode) {
+                showAlert('groupAlert', 'Please enter a group code');
+                return;
+            }
+
+            const group = globalStore.groups.find(g => g.code === groupCode);
+
+            if (!group) {
+                showAlert('groupAlert', 'Group not found');
+                return;
+            }
+
+            if (group.members.includes(currentUser.id)) {
+                showAlert('groupAlert', 'You are already a member of this group');
+                return;
+            }
+
+            group.members.push(currentUser.id);
+            saveStore();
+            groupCodeInput.value = '';
+            showAlert('groupAlert', `Joined group "${group.name}"!`, true);
+            displayGroups();
         }
 
         function displayGroups() {
@@ -1113,50 +1234,30 @@
                 return;
             }
 
-            groupsList.innerHTML = userGroups.map(group => {
+            const groupsHTML = userGroups.map(group => {
+                const isChatActive = currentChat === `group_${group.id}`;
                 return `
-                    <div class="chat-item ${currentChat === `group_${group.id}` ? 'active' : ''}" onclick="selectChat('group_${group.id}')">
-                        <div><strong># ${group.name}</strong></div>
-                        <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">Code: ${group.code}</div>
+                    <div class="chat-item ${isChatActive ? 'active' : ''}" 
+                         data-chat-id="group_${group.id}"
+                         onclick="selectChat('group_${group.id}')">
+                        🔷 ${escapeHtml(group.name)}
                     </div>
                 `;
             }).join('');
+
+            groupsList.innerHTML = groupsHTML || '<p style="font-size: 12px; color: #95a5a6;">No groups yet</p>';
         }
 
-        function selectChat(chatId) {
-            currentChat = chatId;
-            lastMessageCount = 0; // Reset to force refresh
-
-            if (chatId === 'global') {
-                document.getElementById('chatTitle').textContent = '🌍 Global Chat';
-                document.getElementById('chatDescription').textContent = 'Everyone on the platform';
-            } else if (chatId.startsWith('friend_')) {
-                const friendId = chatId.replace('friend_', '');
-                const friend = globalStore.users.find(u => u.id === friendId);
-                document.getElementById('chatTitle').textContent = friend.username;
-                document.getElementById('chatDescription').textContent = 'Direct message';
-            } else if (chatId.startsWith('group_')) {
-                const groupId = chatId.replace('group_', '');
-                const group = globalStore.groups.find(g => g.id === groupId);
-                if (group) {
-                    document.getElementById('chatTitle').textContent = '# ' + group.name;
-                    document.getElementById('chatDescription').textContent = 'Group chat';
-                }
-            }
-
-            displayMessages();
-            displayFriends();
-            displayGroups();
-        }
-
+        // ============ SETTINGS FUNCTIONS ============
         function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
             document.getElementById('settingsUserId').value = currentUser.id;
             document.getElementById('settingsUsername').value = currentUser.username;
-            document.getElementById('settingsModal').classList.add('active');
         }
 
         function closeSettings() {
             document.getElementById('settingsModal').classList.remove('active');
+            document.getElementById('settingsForm').reset();
         }
 
         function handleSettingsSave(e) {
@@ -1164,146 +1265,55 @@
 
             const newUsername = document.getElementById('settingsUsername').value.trim();
 
+            if (!newUsername) {
+                showAlert('settingsAlert', 'Username cannot be empty');
+                return;
+            }
+
             if (newUsername.length < 3) {
                 showAlert('settingsAlert', 'Username must be at least 3 characters');
                 return;
             }
 
-            if (newUsername !== currentUser.username && globalStore.users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
+            if (globalStore.users.some(u => u.id !== currentUser.id && u.username.toLowerCase() === newUsername.toLowerCase())) {
                 showAlert('settingsAlert', 'Username already taken');
                 return;
             }
 
             currentUser.username = newUsername;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-            const userIndex = globalStore.users.findIndex(u => u.id === currentUser.id);
-            if (userIndex !== -1) {
-                globalStore.users[userIndex].username = newUsername;
-                saveStore();
+            
+            const userInStore = globalStore.users.find(u => u.id === currentUser.id);
+            if (userInStore) {
+                userInStore.username = newUsername;
             }
+
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            saveStore();
 
             document.getElementById('currentUsername').textContent = currentUser.username;
             showAlert('settingsAlert', 'Username updated successfully!', true);
-
-            setTimeout(() => {
-                closeSettings();
-                lastMessageCount = 0;
-                displayMessages();
-                displayFriends();
-                displayGroups();
-            }, 1000);
-        }
-
-        function openCreateGroup() {
-            const code = generateGroupCode();
-            document.getElementById('generatedCode').value = code;
-            document.getElementById('groupName').value = '';
-            document.getElementById('createGroupModal').classList.add('active');
-        }
-
-        function closeCreateGroup() {
-            document.getElementById('createGroupModal').classList.remove('active');
-        }
-
-        function handleCreateGroup(e) {
-            e.preventDefault();
-
-            const groupName = document.getElementById('groupName').value.trim();
-            const groupCode = document.getElementById('generatedCode').value;
-
-            if (groupName.length < 3) {
-                showAlert('settingsAlert', 'Group name must be at least 3 characters');
-                return;
-            }
-
-            const newGroup = {
-                id: 'GROUP_' + Date.now(),
-                name: groupName,
-                code: groupCode,
-                createdBy: currentUser.id,
-                members: [currentUser.id],
-                createdAt: new Date().toISOString()
-            };
-
-            globalStore.groups.push(newGroup);
-            globalStore.messages[`group_${newGroup.id}`] = [];
-            saveStore();
-
-            showAlert('settingsAlert', `Group "${groupName}" created with code: ${groupCode}`, true);
             
             setTimeout(() => {
-                closeCreateGroup();
-                displayGroups();
+                closeSettings();
             }, 1500);
         }
 
-        function joinGroupByCode() {
-            const groupCode = document.getElementById('groupCodeInput').value.trim();
-            const alertDiv = document.getElementById('groupAlert');
+        // ============ INITIALIZATION ============
+        initializeStore();
+        document.getElementById('signupForm').addEventListener('submit', handleSignUp);
+        document.getElementById('signinForm').addEventListener('submit', handleSignIn);
+        document.getElementById('recoveryForm').addEventListener('submit', handleRecovery);
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        document.getElementById('settingsForm').addEventListener('submit', handleSettingsSave);
+        document.getElementById('createGroupForm').addEventListener('submit', handleCreateGroup);
 
-            if (!groupCode) {
-                alertDiv.textContent = 'Enter a group code';
-                return;
-            }
-
-            const group = globalStore.groups.find(g => g.code === groupCode);
-            if (!group) {
-                alertDiv.textContent = 'Group not found';
-                return;
-            }
-
-            if (group.members.includes(currentUser.id)) {
-                alertDiv.textContent = 'Already in this group';
-                return;
-            }
-
-            group.members.push(currentUser.id);
-            globalStore.groups[globalStore.groups.findIndex(g => g.id === group.id)] = group;
-            saveStore();
-
-            alertDiv.textContent = `Joined "${group.name}"!`;
-            document.getElementById('groupCodeInput').value = '';
-
-            displayGroups();
-
-            setTimeout(() => {
-                alertDiv.textContent = '';
-            }, 2000);
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            showChat();
         }
-
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                currentUser = null;
-                localStorage.removeItem('currentUser');
-                document.getElementById('chatContainer').classList.remove('active');
-                document.getElementById('welcomeMenu').classList.add('active');
-                document.getElementById('signinForm').reset();
-                document.getElementById('signupForm').reset();
-                lastMessageCount = 0;
-            }
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Optimized polling - only refresh when needed
-        setInterval(() => {
-            if (currentUser && document.getElementById('chatContainer').classList.contains('active')) {
-                // Check if store changed
-                const newStore = localStorage.getItem('globalStore');
-                const currentStore = JSON.stringify(globalStore);
-                
-                if (newStore && newStore !== currentStore) {
-                    initializeStore();
-                }
-                
-                displayMessages();
-            }
-        }, 500);
     </script>
 </body>
 </html>
