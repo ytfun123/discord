@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TextHub - Chat Platform</title>
+    <title>Chillcord - Chat Platform</title>
     <style>
         * {
             margin: 0;
@@ -429,7 +429,7 @@
     <!-- Sign Up Form -->
     <div class="auth-container active" id="signupContainer">
         <div class="auth-header">
-            <h1>TextHub</h1>
+            <h1>Chillcord</h1>
             <p>Create your account</p>
         </div>
 
@@ -439,11 +439,6 @@
             <div class="form-group">
                 <label for="signupUsername">Username</label>
                 <input type="text" id="signupUsername" placeholder="Choose a username" required>
-            </div>
-
-            <div class="form-group">
-                <label for="signupEmail">Email</label>
-                <input type="email" id="signupEmail" placeholder="your@email.com" required>
             </div>
 
             <div class="form-group">
@@ -467,7 +462,7 @@
     <!-- Sign In Form -->
     <div class="auth-container" id="signinContainer">
         <div class="auth-header">
-            <h1>TextHub</h1>
+            <h1>Chillcord</h1>
             <p>Welcome back</p>
         </div>
 
@@ -475,8 +470,8 @@
 
         <form id="signinForm">
             <div class="form-group">
-                <label for="signinUsername">Username or Email</label>
-                <input type="text" id="signinUsername" placeholder="Username or email" required>
+                <label for="signinUsername">Username</label>
+                <input type="text" id="signinUsername" placeholder="Enter your username" required>
             </div>
 
             <div class="form-group">
@@ -497,7 +492,7 @@
     <!-- Account Recovery Form -->
     <div class="auth-container" id="recoveryContainer">
         <div class="auth-header">
-            <h1>TextHub</h1>
+            <h1>Chillcord</h1>
             <p>Recover your account</p>
         </div>
 
@@ -555,7 +550,7 @@
 
             <div class="messages-area" id="messagesArea">
                 <div class="empty-state">
-                    Welcome to TextHub! Start the conversation 💬
+                    Welcome to Chillcord! Start the conversation 💬
                 </div>
             </div>
 
@@ -623,7 +618,6 @@
             e.preventDefault();
 
             const username = document.getElementById('signupUsername').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
             const password = document.getElementById('signupPassword').value;
             const recoveryEmail = document.getElementById('signupRecovery').value.trim();
 
@@ -638,11 +632,6 @@
                 return;
             }
 
-            if (users.some(u => u.email === email)) {
-                showAlert('signupAlert', 'Email already registered');
-                return;
-            }
-
             if (password.length < 6) {
                 showAlert('signupAlert', 'Password must be at least 6 characters');
                 return;
@@ -652,7 +641,6 @@
             const newUser = {
                 id: generateUserId(),
                 username: username,
-                email: email,
                 password: password,
                 recoveryEmail: recoveryEmail,
                 createdAt: new Date().toISOString()
@@ -672,16 +660,16 @@
         function handleSignIn(e) {
             e.preventDefault();
 
-            const input = document.getElementById('signinUsername').value.trim();
+            const username = document.getElementById('signinUsername').value.trim();
             const password = document.getElementById('signinPassword').value;
 
             const user = users.find(u => 
-                (u.username.toLowerCase() === input.toLowerCase() || u.email === input) && 
+                u.username.toLowerCase() === username.toLowerCase() && 
                 u.password === password
             );
 
             if (!user) {
-                showAlert('signinAlert', 'Invalid username/email or password');
+                showAlert('signinAlert', 'Invalid username or password');
                 return;
             }
 
@@ -734,7 +722,7 @@
             const messagesArea = document.getElementById('messagesArea');
 
             if (messages.length === 0) {
-                messagesArea.innerHTML = '<div class="empty-state">Welcome to TextHub! Start the conversation 💬</div>';
+                messagesArea.innerHTML = '<div class="empty-state">Welcome to Chillcord! Start the conversation 💬</div>';
                 return;
             }
 
