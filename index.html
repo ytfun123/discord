@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextHub - Chat Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Auth Container */
+        .auth-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 450px;
+            padding: 40px;
+            display: none;
+        }
+
+        .auth-container.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+            margin-top: 10px;
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .toggle-link a {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .toggle-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main Chat Container */
+        .chat-container {
+            display: none;
+            background: white;
+            width: 100%;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+        }
+
+        .chat-container.active {
+            display: grid;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #34495e;
+        }
+
+        .user-info {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .user-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .user-id {
+            font-size: 12px;
+            color: #bdc3c7;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+
+        .btn-logout {
+            width: 100%;
+            padding: 8px;
+            background: #e74c3c;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #95a5a6;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .friend-item {
+            padding: 10px;
+            background: #34495e;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .friend-item:hover {
+            background: #3d5670;
+        }
+
+        .friend-item.active {
+            background: #667eea;
+        }
+
+        .add-friend-section {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .add-friend-section input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .add-friend-section button {
+            width: 100%;
+            padding: 8px;
+            background: #667eea;
+            border: none;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .add-friend-section button:hover {
+            background: #5568d3;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #34495e;
+            color: white;
+            padding: 20px;
+            border-bottom: 1px solid #2c3e50;
+        }
+
+        .chat-header h2 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 12px;
+            color: #bdc3c7;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: messageAppear 0.3s ease;
+        }
+
+        @keyframes messageAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            max-width: 70%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .message.own .message-content {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message-author {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .message.own .message-author {
+            color: #b8c5f0;
+        }
+
+        .message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .message.own .message-time {
+            color: #b8c5f0;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 12px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .input-area button:hover {
+            background: #5568d3;
+        }
+
+        .empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+            font-size: 16px;
+        }
+
+        .recovery-form {
+            display: none;
+        }
+
+        .recovery-form.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 12px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert.success {
+            background: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sign Up Form -->
+    <div class="auth-container active" id="signupContainer">
+        <div class="auth-header">
+            <h1>TextHub</h1>
+            <p>Create your account</p>
+        </div>
+
+        <div id="signupAlert"></div>
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="signupUsername">Username</label>
+                <input type="text" id="signupUsername" placeholder="Choose a username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input type="email" id="signupEmail" placeholder="your@email.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input type="password" id="signupPassword" placeholder="Create a strong password" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signupRecovery">Recovery Email (for account recovery)</label>
+                <input type="email" id="signupRecovery" placeholder="recovery@email.com" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+        </form>
+
+        <div class="toggle-link">
+            Already have an account? <a onclick="switchToSignIn()">Sign In</a>
+        </div>
+    </div>
+
+    <!-- Sign In Form -->
+    <div class="auth-container" id="signinContainer">
+        <div class="auth-header">
+            <h1>TextHub</h1>
+            <p>Welcome back</p>
+        </div>
+
+        <div id="signinAlert"></div>
+
+        <form id="signinForm">
+            <div class="form-group">
+                <label for="signinUsername">Username or Email</label>
+                <input type="text" id="signinUsername" placeholder="Username or email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="signinPassword">Password</label>
+                <input type="password" id="signinPassword" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+
+        <div class="toggle-link">
+            Don't have an account? <a onclick="switchToSignUp()">Sign Up</a>
+            <br><br>
+            <a onclick="switchToRecovery()">Forgot your password?</a>
+        </div>
+    </div>
+
+    <!-- Account Recovery Form -->
+    <div class="auth-container" id="recoveryContainer">
+        <div class="auth-header">
+            <h1>TextHub</h1>
+            <p>Recover your account</p>
+        </div>
+
+        <div id="recoveryAlert"></div>
+
+        <form id="recoveryForm">
+            <div class="form-group">
+                <label for="recoveryEmail">Recovery Email</label>
+                <input type="email" id="recoveryEmail" placeholder="Enter your recovery email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="recoveryUsername">Username</label>
+                <input type="text" id="recoveryUsername" placeholder="Enter your username" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Recover Account</button>
+        </form>
+
+        <div class="toggle-link">
+            <a onclick="switchToSignIn()">Back to Sign In</a>
+        </div>
+    </div>
+
+    <!-- Chat Interface -->
+    <div class="chat-container" id="chatContainer">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="user-info">
+                <h3 id="currentUsername"></h3>
+                <div class="user-id" id="currentUserId"></div>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="add-friend-section">
+                <input type="text" id="friendIdInput" placeholder="Enter friend's ID">
+                <button onclick="addFriend()">Add Friend</button>
+                <div id="friendAlert" style="font-size: 12px; color: #bdc3c7; margin-top: 8px;"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Friends</div>
+                <div id="friendsList">
+                    <p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <h2>General Chat Room</h2>
+                <p>Talk to everyone on the platform</p>
+            </div>
+
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-state">
+                    Welcome to TextHub! Start the conversation 💬
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Type a message..." />
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data storage (in real app, this would be backend)
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let messages = JSON.parse(localStorage.getItem('messages')) || [];
+        let currentUser = null;
+        let userFriends = {};
+
+        // Initialize
+        document.getElementById('signupForm').addEventListener('submit', handleSignUp);
+        document.getElementById('signinForm').addEventListener('submit', handleSignIn);
+        document.getElementById('recoveryForm').addEventListener('submit', handleRecovery);
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Check if already logged in
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
+            showChat();
+        }
+
+        function switchToSignUp() {
+            document.getElementById('signinContainer').classList.remove('active');
+            document.getElementById('recoveryContainer').classList.remove('active');
+            document.getElementById('signupContainer').classList.add('active');
+        }
+
+        function switchToSignIn() {
+            document.getElementById('signupContainer').classList.remove('active');
+            document.getElementById('recoveryContainer').classList.remove('active');
+            document.getElementById('signinContainer').classList.add('active');
+        }
+
+        function switchToRecovery() {
+            document.getElementById('signinContainer').classList.remove('active');
+            document.getElementById('signupContainer').classList.remove('active');
+            document.getElementById('recoveryContainer').classList.add('active');
+        }
+
+        function showAlert(elementId, message, isSuccess = false) {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `<div class="alert ${isSuccess ? 'success' : ''}">${message}</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+            }, 4000);
+        }
+
+        function generateUserId() {
+            return 'USER_' + Math.random().toString(36).substr(2, 9).toUpperCase();
+        }
+
+        function handleSignUp(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('signupUsername').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const recoveryEmail = document.getElementById('signupRecovery').value.trim();
+
+            // Validation
+            if (username.length < 3) {
+                showAlert('signupAlert', 'Username must be at least 3 characters');
+                return;
+            }
+
+            if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+                showAlert('signupAlert', 'Username already taken');
+                return;
+            }
+
+            if (users.some(u => u.email === email)) {
+                showAlert('signupAlert', 'Email already registered');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('signupAlert', 'Password must be at least 6 characters');
+                return;
+            }
+
+            // Create user
+            const newUser = {
+                id: generateUserId(),
+                username: username,
+                email: email,
+                password: password,
+                recoveryEmail: recoveryEmail,
+                createdAt: new Date().toISOString()
+            };
+
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+
+            showAlert('signupAlert', 'Account created successfully! Sign in now.', true);
+
+            setTimeout(() => {
+                document.getElementById('signupForm').reset();
+                switchToSignIn();
+            }, 1500);
+        }
+
+        function handleSignIn(e) {
+            e.preventDefault();
+
+            const input = document.getElementById('signinUsername').value.trim();
+            const password = document.getElementById('signinPassword').value;
+
+            const user = users.find(u => 
+                (u.username.toLowerCase() === input.toLowerCase() || u.email === input) && 
+                u.password === password
+            );
+
+            if (!user) {
+                showAlert('signinAlert', 'Invalid username/email or password');
+                return;
+            }
+
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
+
+            document.getElementById('signinForm').reset();
+            showChat();
+        }
+
+        function handleRecovery(e) {
+            e.preventDefault();
+
+            const recoveryEmail = document.getElementById('recoveryEmail').value.trim();
+            const username = document.getElementById('recoveryUsername').value.trim();
+
+            const user = users.find(u => 
+                u.username.toLowerCase() === username.toLowerCase() && 
+                u.recoveryEmail === recoveryEmail
+            );
+
+            if (!user) {
+                showAlert('recoveryAlert', 'No account found with these details');
+                return;
+            }
+
+            showAlert('recoveryAlert', `Your password: ${user.password} (Check your email for recovery instructions)`, true);
+
+            setTimeout(() => {
+                document.getElementById('recoveryForm').reset();
+                switchToSignIn();
+            }, 3000);
+        }
+
+        function showChat() {
+            document.getElementById('signupContainer').classList.remove('active');
+            document.getElementById('signinContainer').classList.remove('active');
+            document.getElementById('recoveryContainer').classList.remove('active');
+            document.getElementById('chatContainer').classList.add('active');
+
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            document.getElementById('currentUserId').textContent = `ID: ${currentUser.id}`;
+
+            displayMessages();
+            displayFriends();
+        }
+
+        function displayMessages() {
+            const messagesArea = document.getElementById('messagesArea');
+
+            if (messages.length === 0) {
+                messagesArea.innerHTML = '<div class="empty-state">Welcome to TextHub! Start the conversation 💬</div>';
+                return;
+            }
+
+            messagesArea.innerHTML = messages.map(msg => {
+                const isOwn = msg.userId === currentUser.id;
+                const user = users.find(u => u.id === msg.userId);
+                const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <div class="message ${isOwn ? 'own' : ''}">
+                        <div class="message-content">
+                            <div class="message-author">${user?.username || 'Unknown'}</div>
+                            <div class="message-text">${escapeHtml(msg.text)}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+
+            if (!text) return;
+
+            const message = {
+                id: Date.now(),
+                userId: currentUser.id,
+                text: text,
+                timestamp: new Date().toISOString()
+            };
+
+            messages.push(message);
+            localStorage.setItem('messages', JSON.stringify(messages));
+
+            input.value = '';
+            displayMessages();
+        }
+
+        function addFriend() {
+            const friendId = document.getElementById('friendIdInput').value.trim();
+            const alertDiv = document.getElementById('friendAlert');
+
+            if (!friendId) {
+                alertDiv.textContent = 'Enter a friend ID';
+                return;
+            }
+
+            if (friendId === currentUser.id) {
+                alertDiv.textContent = "You can't add yourself";
+                return;
+            }
+
+            const friend = users.find(u => u.id === friendId);
+            if (!friend) {
+                alertDiv.textContent = 'User not found';
+                return;
+            }
+
+            if (userFriends.includes(friendId)) {
+                alertDiv.textContent = 'Already a friend';
+                return;
+            }
+
+            userFriends.push(friendId);
+            localStorage.setItem('userFriends_' + currentUser.id, JSON.stringify(userFriends));
+
+            alertDiv.textContent = `Added ${friend.username}!`;
+            document.getElementById('friendIdInput').value = '';
+
+            displayFriends();
+
+            setTimeout(() => {
+                alertDiv.textContent = '';
+            }, 2000);
+        }
+
+        function displayFriends() {
+            const friendsList = document.getElementById('friendsList');
+
+            if (userFriends.length === 0) {
+                friendsList.innerHTML = '<p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>';
+                return;
+            }
+
+            friendsList.innerHTML = userFriends.map(friendId => {
+                const friend = users.find(u => u.id === friendId);
+                if (!friend) return '';
+
+                return `
+                    <div class="friend-item">
+                        <div><strong>${friend.username}</strong></div>
+                        <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">ID: ${friendId}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                currentUser = null;
+                localStorage.removeItem('currentUser');
+                document.getElementById('chatContainer').classList.remove('active');
+                switchToSignIn();
+                document.getElementById('signinForm').reset();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
