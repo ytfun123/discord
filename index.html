@@ -99,6 +99,8 @@
             max-width: 450px;
             padding: 40px;
             display: none;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .auth-container.active {
@@ -225,6 +227,7 @@
             border-right: 1px solid #34495e;
             display: flex;
             flex-direction: column;
+            max-height: 100vh;
         }
 
         .user-info {
@@ -232,6 +235,7 @@
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
+            flex-shrink: 0;
         }
 
         .user-info h3 {
@@ -244,6 +248,10 @@
             color: #bdc3c7;
             word-break: break-all;
             margin-bottom: 10px;
+            background: #2c3e50;
+            padding: 8px;
+            border-radius: 3px;
+            font-family: monospace;
         }
 
         .user-buttons {
@@ -287,6 +295,8 @@
             margin-bottom: 25px;
             flex-grow: 1;
             overflow-y: auto;
+            flex-shrink: 1;
+            min-height: 0;
         }
 
         .sidebar-title {
@@ -305,6 +315,7 @@
             font-size: 14px;
             cursor: pointer;
             transition: background 0.3s;
+            word-break: break-all;
         }
 
         .chat-item:hover {
@@ -320,6 +331,7 @@
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 15px;
+            flex-shrink: 0;
         }
 
         .add-section input {
@@ -352,12 +364,14 @@
             font-size: 12px;
             color: #bdc3c7;
             margin-top: 8px;
+            word-break: break-word;
         }
 
         /* Main Chat Area */
         .chat-main {
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
 
         .chat-header {
@@ -365,6 +379,7 @@
             color: white;
             padding: 20px;
             border-bottom: 1px solid #2c3e50;
+            flex-shrink: 0;
         }
 
         .chat-header h2 {
@@ -382,6 +397,7 @@
             overflow-y: auto;
             padding: 20px;
             background: #f8f9fa;
+            min-height: 0;
         }
 
         .message {
@@ -447,6 +463,7 @@
             border-top: 1px solid #ddd;
             display: flex;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .input-area input {
@@ -484,6 +501,7 @@
             height: 100%;
             color: #999;
             font-size: 16px;
+            text-align: center;
         }
 
         .alert {
@@ -525,6 +543,8 @@
             max-width: 400px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             animation: slideIn 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -578,11 +598,6 @@
                 <input type="password" id="signupPassword" placeholder="Create a strong password" required>
             </div>
 
-            <div class="form-group">
-                <label for="signupRecovery">Recovery Email (for account recovery)</label>
-                <input type="email" id="signupRecovery" placeholder="recovery@email.com" required>
-            </div>
-
             <button type="submit" class="btn btn-primary">Sign Up</button>
         </form>
 
@@ -632,11 +647,6 @@
 
         <form id="recoveryForm">
             <div class="form-group">
-                <label for="recoveryEmail">Recovery Email</label>
-                <input type="email" id="recoveryEmail" placeholder="Enter your recovery email" required>
-            </div>
-
-            <div class="form-group">
                 <label for="recoveryUsername">Username</label>
                 <input type="text" id="recoveryUsername" placeholder="Enter your username" required>
             </div>
@@ -662,12 +672,19 @@
                 </div>
             </div>
 
+            <!-- Global Chat -->
             <div class="add-section">
-                <input type="text" id="friendIdInput" placeholder="Enter friend's ID">
-                <button onclick="addFriend()">Add Friend</button>
+                <button onclick="selectChat('global')" style="background: #27ae60; width: 100%; margin-bottom: 8px;">🌍 Global Chat</button>
+            </div>
+
+            <!-- Add Friend Section -->
+            <div class="add-section">
+                <input type="text" id="friendIdInput" placeholder="Enter username">
+                <button onclick="addFriend()">+ Add Friend</button>
                 <div id="friendAlert" class="section-alert"></div>
             </div>
 
+            <!-- Friends List -->
             <div class="sidebar-section">
                 <div class="sidebar-title">Direct Messages</div>
                 <div id="friendsList">
@@ -675,13 +692,15 @@
                 </div>
             </div>
 
+            <!-- Create/Join Group Section -->
             <div class="add-section">
-                <button onclick="openCreateGroup()" style="background: #27ae60; margin-bottom: 8px;">+ Create Group</button>
+                <button onclick="openCreateGroup()" style="background: #9b59b6; margin-bottom: 8px;">+ Create Group</button>
                 <input type="text" id="groupCodeInput" placeholder="Enter group code">
                 <button onclick="joinGroupByCode()">Join Group</button>
                 <div id="groupAlert" class="section-alert"></div>
             </div>
 
+            <!-- Groups List -->
             <div class="sidebar-section">
                 <div class="sidebar-title">Groups</div>
                 <div id="groupsList">
@@ -693,8 +712,8 @@
         <!-- Main Chat -->
         <div class="chat-main">
             <div class="chat-header">
-                <h2 id="chatTitle">General Chat Room</h2>
-                <p id="chatDescription">Talk to everyone on the platform</p>
+                <h2 id="chatTitle">Global Chat</h2>
+                <p id="chatDescription">Everyone on the platform</p>
             </div>
 
             <div class="messages-area" id="messagesArea">
@@ -718,7 +737,7 @@
             <div id="settingsAlert"></div>
             <form id="settingsForm">
                 <div class="form-group">
-                    <label>User ID (cannot change)</label>
+                    <label>User ID</label>
                     <input type="text" id="settingsUserId" readonly style="background: #f0f0f0;">
                 </div>
                 <div class="form-group">
@@ -742,7 +761,7 @@
                 </div>
                 <div class="form-group">
                     <label>Group Code (will be generated)</label>
-                    <input type="text" id="generatedCode" readonly style="background: #f0f0f0;" placeholder="Code will appear here">
+                    <input type="text" id="generatedCode" readonly style="background: #f0f0f0;">
                 </div>
                 <button type="submit" class="btn btn-primary">Create Group</button>
             </form>
@@ -750,16 +769,37 @@
     </div>
 
     <script>
-        // Data storage using localStorage (persists across browser sessions)
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-        let allMessages = JSON.parse(localStorage.getItem('allMessages')) || {};
+        // ============ GLOBAL DATA STORAGE ============
+        // Using a global store that simulates a backend
+        const globalStore = {
+            users: [],
+            messages: {}, // keyed by chat type and id
+            groups: [],
+            friends: {} // keyed by userId
+        };
+
+        // Initialize from localStorage
+        function initializeStore() {
+            const stored = localStorage.getItem('globalStore');
+            if (stored) {
+                Object.assign(globalStore, JSON.parse(stored));
+            } else {
+                globalStore.messages['global'] = [];
+                saveStore();
+            }
+        }
+
+        // Save store to localStorage
+        function saveStore() {
+            localStorage.setItem('globalStore', JSON.stringify(globalStore));
+        }
+
+        // ============ USER VARIABLES ============
         let currentUser = null;
-        let userFriends = [];
-        let userGroups = [];
-        let currentChat = 'general';
-        let groups = JSON.parse(localStorage.getItem('groups')) || [];
+        let currentChat = 'global'; // Can be 'global', userId, or groupId
 
         // Initialize
+        initializeStore();
         document.getElementById('signupForm').addEventListener('submit', handleSignUp);
         document.getElementById('signinForm').addEventListener('submit', handleSignIn);
         document.getElementById('recoveryForm').addEventListener('submit', handleRecovery);
@@ -773,8 +813,6 @@
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
-            userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
-            userGroups = JSON.parse(localStorage.getItem('userGroups_' + currentUser.id)) || [];
             showChat();
         }
 
@@ -819,14 +857,13 @@
 
             const username = document.getElementById('signupUsername').value.trim();
             const password = document.getElementById('signupPassword').value;
-            const recoveryEmail = document.getElementById('signupRecovery').value.trim();
 
             if (username.length < 3) {
                 showAlert('signupAlert', 'Username must be at least 3 characters');
                 return;
             }
 
-            if (users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
+            if (globalStore.users.some(u => u.username.toLowerCase() === username.toLowerCase())) {
                 showAlert('signupAlert', 'Username already taken');
                 return;
             }
@@ -840,12 +877,12 @@
                 id: generateUserId(),
                 username: username,
                 password: password,
-                recoveryEmail: recoveryEmail,
                 createdAt: new Date().toISOString()
             };
 
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+            globalStore.users.push(newUser);
+            globalStore.friends[newUser.id] = [];
+            saveStore();
 
             showAlert('signupAlert', 'Account created successfully! Sign in now.', true);
 
@@ -861,7 +898,7 @@
             const username = document.getElementById('signinUsername').value.trim();
             const password = document.getElementById('signinPassword').value;
 
-            const user = users.find(u => 
+            const user = globalStore.users.find(u => 
                 u.username.toLowerCase() === username.toLowerCase() && 
                 u.password === password
             );
@@ -873,8 +910,6 @@
 
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
-            userGroups = JSON.parse(localStorage.getItem('userGroups_' + currentUser.id)) || [];
 
             document.getElementById('signinForm').reset();
             showChat();
@@ -883,20 +918,18 @@
         function handleRecovery(e) {
             e.preventDefault();
 
-            const recoveryEmail = document.getElementById('recoveryEmail').value.trim();
             const username = document.getElementById('recoveryUsername').value.trim();
 
-            const user = users.find(u => 
-                u.username.toLowerCase() === username.toLowerCase() && 
-                u.recoveryEmail === recoveryEmail
+            const user = globalStore.users.find(u => 
+                u.username.toLowerCase() === username.toLowerCase()
             );
 
             if (!user) {
-                showAlert('recoveryAlert', 'No account found with these details');
+                showAlert('recoveryAlert', 'No account found with this username');
                 return;
             }
 
-            showAlert('recoveryAlert', `Your password: ${user.password} (Check your email for recovery instructions)`, true);
+            showAlert('recoveryAlert', `Your password: ${user.password}`, true);
 
             setTimeout(() => {
                 document.getElementById('recoveryForm').reset();
@@ -914,6 +947,7 @@
             document.getElementById('currentUsername').textContent = currentUser.username;
             document.getElementById('currentUserId').textContent = `ID: ${currentUser.id}`;
 
+            currentChat = 'global';
             displayMessages();
             displayFriends();
             displayGroups();
@@ -921,8 +955,18 @@
 
         function displayMessages() {
             const messagesArea = document.getElementById('messagesArea');
-            const key = currentChat === 'general' ? 'general' : currentChat;
-            const messages = allMessages[key] || [];
+            let messages = [];
+
+            if (currentChat === 'global') {
+                messages = globalStore.messages['global'] || [];
+            } else if (currentChat.startsWith('friend_')) {
+                const friendId = currentChat.replace('friend_', '');
+                messages = globalStore.messages[`dm_${currentUser.id}_${friendId}`] || 
+                          globalStore.messages[`dm_${friendId}_${currentUser.id}`] || [];
+            } else if (currentChat.startsWith('group_')) {
+                const groupId = currentChat.replace('group_', '');
+                messages = globalStore.messages[`group_${groupId}`] || [];
+            }
 
             if (messages.length === 0) {
                 messagesArea.innerHTML = '<div class="empty-state">No messages yet. Start the conversation! 💬</div>';
@@ -931,7 +975,7 @@
 
             messagesArea.innerHTML = messages.map(msg => {
                 const isOwn = msg.userId === currentUser.id;
-                const user = users.find(u => u.id === msg.userId);
+                const user = globalStore.users.find(u => u.id === msg.userId);
                 const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                 return `
@@ -954,9 +998,6 @@
 
             if (!text) return;
 
-            const key = currentChat === 'general' ? 'general' : currentChat;
-            if (!allMessages[key]) allMessages[key] = [];
-
             const message = {
                 id: Date.now(),
                 userId: currentUser.id,
@@ -964,40 +1005,60 @@
                 timestamp: new Date().toISOString()
             };
 
-            allMessages[key].push(message);
-            localStorage.setItem('allMessages', JSON.stringify(allMessages));
+            let key = 'global';
+            if (currentChat === 'global') {
+                key = 'global';
+            } else if (currentChat.startsWith('friend_')) {
+                const friendId = currentChat.replace('friend_', '');
+                key = `dm_${currentUser.id}_${friendId}`;
+            } else if (currentChat.startsWith('group_')) {
+                const groupId = currentChat.replace('group_', '');
+                key = `group_${groupId}`;
+            }
+
+            if (!globalStore.messages[key]) {
+                globalStore.messages[key] = [];
+            }
+
+            globalStore.messages[key].push(message);
+            saveStore();
 
             input.value = '';
             displayMessages();
         }
 
         function addFriend() {
-            const friendId = document.getElementById('friendIdInput').value.trim();
+            const friendUsername = document.getElementById('friendIdInput').value.trim();
             const alertDiv = document.getElementById('friendAlert');
 
-            if (!friendId) {
-                alertDiv.textContent = 'Enter a friend ID';
+            if (!friendUsername) {
+                alertDiv.textContent = 'Enter a username';
                 return;
             }
 
-            if (friendId === currentUser.id) {
-                alertDiv.textContent = "You can't add yourself";
-                return;
-            }
-
-            const friend = users.find(u => u.id === friendId);
+            const friend = globalStore.users.find(u => u.username.toLowerCase() === friendUsername.toLowerCase());
+            
             if (!friend) {
                 alertDiv.textContent = 'User not found';
                 return;
             }
 
-            if (userFriends.includes(friendId)) {
+            if (friend.id === currentUser.id) {
+                alertDiv.textContent = "You can't add yourself";
+                return;
+            }
+
+            if (!globalStore.friends[currentUser.id]) {
+                globalStore.friends[currentUser.id] = [];
+            }
+
+            if (globalStore.friends[currentUser.id].includes(friend.id)) {
                 alertDiv.textContent = 'Already a friend';
                 return;
             }
 
-            userFriends.push(friendId);
-            localStorage.setItem('userFriends_' + currentUser.id, JSON.stringify(userFriends));
+            globalStore.friends[currentUser.id].push(friend.id);
+            saveStore();
 
             alertDiv.textContent = `Added ${friend.username}!`;
             document.getElementById('friendIdInput').value = '';
@@ -1011,6 +1072,7 @@
 
         function displayFriends() {
             const friendsList = document.getElementById('friendsList');
+            const userFriends = globalStore.friends[currentUser.id] || [];
 
             if (userFriends.length === 0) {
                 friendsList.innerHTML = '<p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>';
@@ -1018,11 +1080,11 @@
             }
 
             friendsList.innerHTML = userFriends.map(friendId => {
-                const friend = users.find(u => u.id === friendId);
+                const friend = globalStore.users.find(u => u.id === friendId);
                 if (!friend) return '';
 
                 return `
-                    <div class="chat-item ${currentChat === friendId ? 'active' : ''}" onclick="selectChat('${friendId}')">
+                    <div class="chat-item ${currentChat === `friend_${friendId}` ? 'active' : ''}" onclick="selectChat('friend_${friendId}')">
                         <div><strong>${friend.username}</strong></div>
                         <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">ID: ${friendId}</div>
                     </div>
@@ -1032,18 +1094,16 @@
 
         function displayGroups() {
             const groupsList = document.getElementById('groupsList');
+            const userGroups = globalStore.groups.filter(g => g.members.includes(currentUser.id));
 
             if (userGroups.length === 0) {
                 groupsList.innerHTML = '<p style="font-size: 12px; color: #95a5a6;">No groups yet</p>';
                 return;
             }
 
-            groupsList.innerHTML = userGroups.map(groupId => {
-                const group = groups.find(g => g.id === groupId);
-                if (!group) return '';
-
+            groupsList.innerHTML = userGroups.map(group => {
                 return `
-                    <div class="chat-item ${currentChat === groupId ? 'active' : ''}" onclick="selectChat('${groupId}')">
+                    <div class="chat-item ${currentChat === `group_${group.id}` ? 'active' : ''}" onclick="selectChat('group_${group.id}')">
                         <div><strong># ${group.name}</strong></div>
                         <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">Code: ${group.code}</div>
                     </div>
@@ -1052,17 +1112,20 @@
         }
 
         function selectChat(chatId) {
-            currentChat = chatId;
-            
-            if (chatId === 'general') {
-                document.getElementById('chatTitle').textContent = 'General Chat Room';
-                document.getElementById('chatDescription').textContent = 'Talk to everyone on the platform';
-            } else if (userFriends.includes(chatId)) {
-                const friend = users.find(u => u.id === chatId);
+            if (chatId === 'global') {
+                currentChat = 'global';
+                document.getElementById('chatTitle').textContent = '🌍 Global Chat';
+                document.getElementById('chatDescription').textContent = 'Everyone on the platform';
+            } else if (chatId.startsWith('friend_')) {
+                const friendId = chatId.replace('friend_', '');
+                const friend = globalStore.users.find(u => u.id === friendId);
+                currentChat = chatId;
                 document.getElementById('chatTitle').textContent = friend.username;
                 document.getElementById('chatDescription').textContent = 'Direct message';
-            } else {
-                const group = groups.find(g => g.id === chatId);
+            } else if (chatId.startsWith('group_')) {
+                const groupId = chatId.replace('group_', '');
+                const group = globalStore.groups.find(g => g.id === groupId);
+                currentChat = chatId;
                 if (group) {
                     document.getElementById('chatTitle').textContent = '# ' + group.name;
                     document.getElementById('chatDescription').textContent = 'Group chat';
@@ -1094,7 +1157,7 @@
                 return;
             }
 
-            if (newUsername !== currentUser.username && users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
+            if (newUsername !== currentUser.username && globalStore.users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
                 showAlert('settingsAlert', 'Username already taken');
                 return;
             }
@@ -1102,10 +1165,10 @@
             currentUser.username = newUsername;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            const userIndex = globalStore.users.findIndex(u => u.id === currentUser.id);
             if (userIndex !== -1) {
-                users[userIndex].username = newUsername;
-                localStorage.setItem('users', JSON.stringify(users));
+                globalStore.users[userIndex].username = newUsername;
+                saveStore();
             }
 
             document.getElementById('currentUsername').textContent = currentUser.username;
@@ -1115,6 +1178,7 @@
                 closeSettings();
                 displayMessages();
                 displayFriends();
+                displayGroups();
             }, 1000);
         }
 
@@ -1149,16 +1213,11 @@
                 createdAt: new Date().toISOString()
             };
 
-            groups.push(newGroup);
-            localStorage.setItem('groups', JSON.stringify(groups));
+            globalStore.groups.push(newGroup);
+            globalStore.messages[`group_${newGroup.id}`] = [];
+            saveStore();
 
-            userGroups.push(newGroup.id);
-            localStorage.setItem('userGroups_' + currentUser.id, JSON.stringify(userGroups));
-
-            allMessages[newGroup.id] = [];
-            localStorage.setItem('allMessages', JSON.stringify(allMessages));
-
-            showAlert('groupAlert', `Group "${groupName}" created with code: ${groupCode}`, true);
+            showAlert('settingsAlert', `Group "${groupName}" created with code: ${groupCode}`, true);
             
             setTimeout(() => {
                 closeCreateGroup();
@@ -1175,25 +1234,20 @@
                 return;
             }
 
-            const group = groups.find(g => g.code === groupCode);
+            const group = globalStore.groups.find(g => g.code === groupCode);
             if (!group) {
                 alertDiv.textContent = 'Group not found';
                 return;
             }
 
-            if (userGroups.includes(group.id)) {
+            if (group.members.includes(currentUser.id)) {
                 alertDiv.textContent = 'Already in this group';
                 return;
             }
 
-            userGroups.push(group.id);
-            localStorage.setItem('userGroups_' + currentUser.id, JSON.stringify(userGroups));
-
-            if (!group.members.includes(currentUser.id)) {
-                group.members.push(currentUser.id);
-                groups[groups.findIndex(g => g.id === group.id)] = group;
-                localStorage.setItem('groups', JSON.stringify(groups));
-            }
+            group.members.push(currentUser.id);
+            globalStore.groups[globalStore.groups.findIndex(g => g.id === group.id)] = group;
+            saveStore();
 
             alertDiv.textContent = `Joined "${group.name}"!`;
             document.getElementById('groupCodeInput').value = '';
@@ -1221,6 +1275,13 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // Auto-refresh messages every 1 second to simulate real-time sync
+        setInterval(() => {
+            if (currentUser && document.getElementById('chatContainer').classList.contains('active')) {
+                displayMessages();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
