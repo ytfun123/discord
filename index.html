@@ -402,18 +402,6 @@
 
         .message {
             margin-bottom: 15px;
-            animation: messageAppear 0.3s ease;
-        }
-
-        @keyframes messageAppear {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .message-content {
@@ -770,22 +758,35 @@
 
     <script>
         // ============ GLOBAL DATA STORAGE ============
-        // Using a global store that simulates a backend
         const globalStore = {
             users: [],
-            messages: {}, // keyed by chat type and id
+            messages: {
+                'global': [] // Initialize global chat
+            },
             groups: [],
-            friends: {} // keyed by userId
+            friends: {}
         };
+
+        let lastMessageCount = 0; // Track last message count to prevent re-renders
 
         // Initialize from localStorage
         function initializeStore() {
             const stored = localStorage.getItem('globalStore');
             if (stored) {
-                Object.assign(globalStore, JSON.parse(stored));
-            } else {
-                globalStore.messages['global'] = [];
-                saveStore();
+                try {
+                    const data = JSON.parse(stored);
+                    globalStore.users = data.users || [];
+                    globalStore.groups = data.groups || [];
+                    globalStore.friends = data.friends || {};
+                    globalStore.messages = data.messages || { 'global': [] };
+                    
+                    // Ensure global key exists
+                    if (!globalStore.messages['global']) {
+                        globalStore.messages['global'] = [];
+                    }
+                } catch (e) {
+                    console.error('Error parsing globalStore:', e);
+                }
             }
         }
 
@@ -796,7 +797,7 @@
 
         // ============ USER VARIABLES ============
         let currentUser = null;
-        let currentChat = 'global'; // Can be 'global', userId, or groupId
+        let currentChat = 'global';
 
         // Initialize
         initializeStore();
@@ -948,6 +949,7 @@
             document.getElementById('currentUserId').textContent = `ID: ${currentUser.id}`;
 
             currentChat = 'global';
+            lastMessageCount = 0;
             displayMessages();
             displayFriends();
             displayGroups();
@@ -957,16 +959,25 @@
             const messagesArea = document.getElementById('messagesArea');
             let messages = [];
 
+            // Get messages based on current chat
             if (currentChat === 'global') {
                 messages = globalStore.messages['global'] || [];
             } else if (currentChat.startsWith('friend_')) {
                 const friendId = currentChat.replace('friend_', '');
-                messages = globalStore.messages[`dm_${currentUser.id}_${friendId}`] || 
-                          globalStore.messages[`dm_${friendId}_${currentUser.id}`] || [];
+                const key1 = `dm_${currentUser.id}_${friendId}`;
+                const key2 = `dm_${friendId}_${currentUser.id}`;
+                messages = globalStore.messages[key1] || globalStore.messages[key2] || [];
             } else if (currentChat.startsWith('group_')) {
                 const groupId = currentChat.replace('group_', '');
                 messages = globalStore.messages[`group_${groupId}`] || [];
             }
+
+            // Only update if message count changed
+            if (messages.length === lastMessageCount && messagesArea.children.length > 1) {
+                return;
+            }
+
+            lastMessageCount = messages.length;
 
             if (messages.length === 0) {
                 messagesArea.innerHTML = '<div class="empty-state">No messages yet. Start the conversation! 💬</div>';
@@ -999,7 +1010,7 @@
             if (!text) return;
 
             const message = {
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 userId: currentUser.id,
                 text: text,
                 timestamp: new Date().toISOString()
@@ -1024,6 +1035,7 @@
             saveStore();
 
             input.value = '';
+            lastMessageCount = 0; // Reset to force refresh
             displayMessages();
         }
 
@@ -1112,20 +1124,20 @@
         }
 
         function selectChat(chatId) {
+            currentChat = chatId;
+            lastMessageCount = 0; // Reset to force refresh
+
             if (chatId === 'global') {
-                currentChat = 'global';
                 document.getElementById('chatTitle').textContent = '🌍 Global Chat';
                 document.getElementById('chatDescription').textContent = 'Everyone on the platform';
             } else if (chatId.startsWith('friend_')) {
                 const friendId = chatId.replace('friend_', '');
                 const friend = globalStore.users.find(u => u.id === friendId);
-                currentChat = chatId;
                 document.getElementById('chatTitle').textContent = friend.username;
                 document.getElementById('chatDescription').textContent = 'Direct message';
             } else if (chatId.startsWith('group_')) {
                 const groupId = chatId.replace('group_', '');
                 const group = globalStore.groups.find(g => g.id === groupId);
-                currentChat = chatId;
                 if (group) {
                     document.getElementById('chatTitle').textContent = '# ' + group.name;
                     document.getElementById('chatDescription').textContent = 'Group chat';
@@ -1176,6 +1188,7 @@
 
             setTimeout(() => {
                 closeSettings();
+                lastMessageCount = 0;
                 displayMessages();
                 displayFriends();
                 displayGroups();
@@ -1267,6 +1280,7 @@
                 document.getElementById('welcomeMenu').classList.add('active');
                 document.getElementById('signinForm').reset();
                 document.getElementById('signupForm').reset();
+                lastMessageCount = 0;
             }
         }
 
@@ -1276,12 +1290,20 @@
             return div.innerHTML;
         }
 
-        // Auto-refresh messages every 1 second to simulate real-time sync
+        // Optimized polling - only refresh when needed
         setInterval(() => {
             if (currentUser && document.getElementById('chatContainer').classList.contains('active')) {
+                // Check if store changed
+                const newStore = localStorage.getItem('globalStore');
+                const currentStore = JSON.stringify(globalStore);
+                
+                if (newStore && newStore !== currentStore) {
+                    initializeStore();
+                }
+                
                 displayMessages();
             }
-        }, 1000);
+        }, 500);
     </script>
 </body>
 </html>
