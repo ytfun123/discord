@@ -20,6 +20,71 @@
             align-items: center;
         }
 
+        /* Welcome Menu */
+        .welcome-menu {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 450px;
+            padding: 60px 40px;
+            text-align: center;
+            display: none;
+        }
+
+        .welcome-menu.active {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .welcome-menu h1 {
+            color: #667eea;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-menu p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .menu-buttons {
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+        }
+
+        .btn-menu {
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-signup {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-signup:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-signin {
+            background: #f0f0f0;
+            color: #667eea;
+        }
+
+        .btn-signin:hover {
+            background: #e0e0e0;
+        }
+
         /* Auth Container */
         .auth-container {
             background: white;
@@ -116,22 +181,6 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #667eea;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 14px;
-            width: auto;
-            margin-top: 10px;
-        }
-
         .toggle-link {
             text-align: center;
             margin-top: 20px;
@@ -171,6 +220,8 @@
             padding: 20px;
             overflow-y: auto;
             border-right: 1px solid #34495e;
+            display: flex;
+            flex-direction: column;
         }
 
         .user-info {
@@ -192,8 +243,29 @@
             margin-bottom: 10px;
         }
 
+        .user-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-settings {
+            flex: 1;
+            padding: 8px;
+            background: #3498db;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .btn-settings:hover {
+            background: #2980b9;
+        }
+
         .btn-logout {
-            width: 100%;
+            flex: 1;
             padding: 8px;
             background: #e74c3c;
             border: none;
@@ -210,6 +282,8 @@
 
         .sidebar-section {
             margin-bottom: 25px;
+            flex-grow: 1;
+            overflow-y: auto;
         }
 
         .sidebar-title {
@@ -220,7 +294,7 @@
             font-weight: 600;
         }
 
-        .friend-item {
+        .chat-item {
             padding: 10px;
             background: #34495e;
             border-radius: 5px;
@@ -230,22 +304,22 @@
             transition: background 0.3s;
         }
 
-        .friend-item:hover {
+        .chat-item:hover {
             background: #3d5670;
         }
 
-        .friend-item.active {
+        .chat-item.active {
             background: #667eea;
         }
 
-        .add-friend-section {
+        .add-section {
             background: #34495e;
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 15px;
         }
 
-        .add-friend-section input {
+        .add-section input {
             width: 100%;
             padding: 10px;
             border: none;
@@ -254,7 +328,7 @@
             margin-bottom: 8px;
         }
 
-        .add-friend-section button {
+        .add-section button {
             width: 100%;
             padding: 8px;
             background: #667eea;
@@ -264,10 +338,17 @@
             cursor: pointer;
             font-size: 12px;
             font-weight: 600;
+            margin-bottom: 5px;
         }
 
-        .add-friend-section button:hover {
+        .add-section button:hover {
             background: #5568d3;
+        }
+
+        .section-alert {
+            font-size: 12px;
+            color: #bdc3c7;
+            margin-top: 8px;
         }
 
         /* Main Chat Area */
@@ -357,7 +438,6 @@
             color: #b8c5f0;
         }
 
-        /* Input Area */
         .input-area {
             padding: 20px;
             background: white;
@@ -403,14 +483,6 @@
             font-size: 16px;
         }
 
-        .recovery-form {
-            display: none;
-        }
-
-        .recovery-form.active {
-            display: block;
-        }
-
         .alert {
             padding: 12px;
             background: #e74c3c;
@@ -423,11 +495,68 @@
         .alert.success {
             background: #27ae60;
         }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-header {
+            font-size: 24px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
     </style>
 </head>
 <body>
+    <!-- Welcome Menu -->
+    <div class="welcome-menu active" id="welcomeMenu">
+        <h1>Chillcord</h1>
+        <p>Let's get started!</p>
+        <div class="menu-buttons">
+            <button class="btn-menu btn-signup" onclick="switchToSignUp()">Create Account</button>
+            <button class="btn-menu btn-signin" onclick="switchToSignIn()">Sign In</button>
+        </div>
+    </div>
+
     <!-- Sign Up Form -->
-    <div class="auth-container active" id="signupContainer">
+    <div class="auth-container" id="signupContainer">
         <div class="auth-header">
             <h1>Chillcord</h1>
             <p>Create your account</p>
@@ -524,19 +653,36 @@
             <div class="user-info">
                 <h3 id="currentUsername"></h3>
                 <div class="user-id" id="currentUserId"></div>
-                <button class="btn-logout" onclick="logout()">Logout</button>
+                <div class="user-buttons">
+                    <button class="btn-settings" onclick="openSettings()">Settings</button>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                </div>
             </div>
 
-            <div class="add-friend-section">
+            <div class="add-section">
                 <input type="text" id="friendIdInput" placeholder="Enter friend's ID">
                 <button onclick="addFriend()">Add Friend</button>
-                <div id="friendAlert" style="font-size: 12px; color: #bdc3c7; margin-top: 8px;"></div>
+                <div id="friendAlert" class="section-alert"></div>
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">Friends</div>
+                <div class="sidebar-title">Direct Messages</div>
                 <div id="friendsList">
                     <p style="font-size: 12px; color: #95a5a6;">No friends added yet</p>
+                </div>
+            </div>
+
+            <div class="add-section">
+                <button onclick="openCreateGroup()" style="background: #27ae60; margin-bottom: 8px;">+ Create Group</button>
+                <input type="text" id="groupCodeInput" placeholder="Enter group code">
+                <button onclick="joinGroupByCode()">Join Group</button>
+                <div id="groupAlert" class="section-alert"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Groups</div>
+                <div id="groupsList">
+                    <p style="font-size: 12px; color: #95a5a6;">No groups yet</p>
                 </div>
             </div>
         </div>
@@ -544,8 +690,8 @@
         <!-- Main Chat -->
         <div class="chat-main">
             <div class="chat-header">
-                <h2>General Chat Room</h2>
-                <p>Talk to everyone on the platform</p>
+                <h2 id="chatTitle">General Chat Room</h2>
+                <p id="chatDescription">Talk to everyone on the platform</p>
             </div>
 
             <div class="messages-area" id="messagesArea">
@@ -561,12 +707,54 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeSettings()">&times;</span>
+            <div class="modal-header">Settings</div>
+            <div id="settingsAlert"></div>
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label>User ID (cannot change)</label>
+                    <input type="text" id="settingsUserId" readonly style="background: #f0f0f0;">
+                </div>
+                <div class="form-group">
+                    <label for="settingsUsername">Username</label>
+                    <input type="text" id="settingsUsername" placeholder="New username">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div class="modal" id="createGroupModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeCreateGroup()">&times;</span>
+            <div class="modal-header">Create Group</div>
+            <form id="createGroupForm">
+                <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" id="groupName" placeholder="Enter group name" required>
+                </div>
+                <div class="form-group">
+                    <label>Group Code (will be generated)</label>
+                    <input type="text" id="generatedCode" readonly style="background: #f0f0f0;" placeholder="Code will appear here">
+                </div>
+                <button type="submit" class="btn btn-primary">Create Group</button>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // Data storage (in real app, this would be backend)
+        // Data storage using localStorage (persists across browser sessions)
         let users = JSON.parse(localStorage.getItem('users')) || [];
-        let messages = JSON.parse(localStorage.getItem('messages')) || [];
+        let allMessages = JSON.parse(localStorage.getItem('allMessages')) || {};
         let currentUser = null;
-        let userFriends = {};
+        let userFriends = [];
+        let userGroups = [];
+        let currentChat = 'general';
+        let groups = JSON.parse(localStorage.getItem('groups')) || [];
 
         // Initialize
         document.getElementById('signupForm').addEventListener('submit', handleSignUp);
@@ -575,22 +763,27 @@
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+        document.getElementById('settingsForm').addEventListener('submit', handleSettingsSave);
+        document.getElementById('createGroupForm').addEventListener('submit', handleCreateGroup);
 
         // Check if already logged in
         const savedUser = localStorage.getItem('currentUser');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
             userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
+            userGroups = JSON.parse(localStorage.getItem('userGroups_' + currentUser.id)) || [];
             showChat();
         }
 
         function switchToSignUp() {
+            document.getElementById('welcomeMenu').classList.remove('active');
             document.getElementById('signinContainer').classList.remove('active');
             document.getElementById('recoveryContainer').classList.remove('active');
             document.getElementById('signupContainer').classList.add('active');
         }
 
         function switchToSignIn() {
+            document.getElementById('welcomeMenu').classList.remove('active');
             document.getElementById('signupContainer').classList.remove('active');
             document.getElementById('recoveryContainer').classList.remove('active');
             document.getElementById('signinContainer').classList.add('active');
@@ -614,6 +807,10 @@
             return 'USER_' + Math.random().toString(36).substr(2, 9).toUpperCase();
         }
 
+        function generateGroupCode() {
+            return 'GROUP_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        }
+
         function handleSignUp(e) {
             e.preventDefault();
 
@@ -621,7 +818,6 @@
             const password = document.getElementById('signupPassword').value;
             const recoveryEmail = document.getElementById('signupRecovery').value.trim();
 
-            // Validation
             if (username.length < 3) {
                 showAlert('signupAlert', 'Username must be at least 3 characters');
                 return;
@@ -637,7 +833,6 @@
                 return;
             }
 
-            // Create user
             const newUser = {
                 id: generateUserId(),
                 username: username,
@@ -676,6 +871,7 @@
             currentUser = user;
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
             userFriends = JSON.parse(localStorage.getItem('userFriends_' + currentUser.id)) || [];
+            userGroups = JSON.parse(localStorage.getItem('userGroups_' + currentUser.id)) || [];
 
             document.getElementById('signinForm').reset();
             showChat();
@@ -706,6 +902,7 @@
         }
 
         function showChat() {
+            document.getElementById('welcomeMenu').classList.remove('active');
             document.getElementById('signupContainer').classList.remove('active');
             document.getElementById('signinContainer').classList.remove('active');
             document.getElementById('recoveryContainer').classList.remove('active');
@@ -716,13 +913,16 @@
 
             displayMessages();
             displayFriends();
+            displayGroups();
         }
 
         function displayMessages() {
             const messagesArea = document.getElementById('messagesArea');
+            const key = currentChat === 'general' ? 'general' : currentChat;
+            const messages = allMessages[key] || [];
 
             if (messages.length === 0) {
-                messagesArea.innerHTML = '<div class="empty-state">Welcome to Chillcord! Start the conversation 💬</div>';
+                messagesArea.innerHTML = '<div class="empty-state">No messages yet. Start the conversation! 💬</div>';
                 return;
             }
 
@@ -751,6 +951,9 @@
 
             if (!text) return;
 
+            const key = currentChat === 'general' ? 'general' : currentChat;
+            if (!allMessages[key]) allMessages[key] = [];
+
             const message = {
                 id: Date.now(),
                 userId: currentUser.id,
@@ -758,8 +961,8 @@
                 timestamp: new Date().toISOString()
             };
 
-            messages.push(message);
-            localStorage.setItem('messages', JSON.stringify(messages));
+            allMessages[key].push(message);
+            localStorage.setItem('allMessages', JSON.stringify(allMessages));
 
             input.value = '';
             displayMessages();
@@ -816,7 +1019,7 @@
                 if (!friend) return '';
 
                 return `
-                    <div class="friend-item">
+                    <div class="chat-item ${currentChat === friendId ? 'active' : ''}" onclick="selectChat('${friendId}')">
                         <div><strong>${friend.username}</strong></div>
                         <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">ID: ${friendId}</div>
                     </div>
@@ -824,13 +1027,189 @@
             }).join('');
         }
 
+        function displayGroups() {
+            const groupsList = document.getElementById('groupsList');
+
+            if (userGroups.length === 0) {
+                groupsList.innerHTML = '<p style="font-size: 12px; color: #95a5a6;">No groups yet</p>';
+                return;
+            }
+
+            groupsList.innerHTML = userGroups.map(groupId => {
+                const group = groups.find(g => g.id === groupId);
+                if (!group) return '';
+
+                return `
+                    <div class="chat-item ${currentChat === groupId ? 'active' : ''}" onclick="selectChat('${groupId}')">
+                        <div><strong># ${group.name}</strong></div>
+                        <div style="font-size: 11px; color: #95a5a6; margin-top: 5px;">Code: ${group.code}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectChat(chatId) {
+            currentChat = chatId;
+            
+            if (chatId === 'general') {
+                document.getElementById('chatTitle').textContent = 'General Chat Room';
+                document.getElementById('chatDescription').textContent = 'Talk to everyone on the platform';
+            } else if (userFriends.includes(chatId)) {
+                const friend = users.find(u => u.id === chatId);
+                document.getElementById('chatTitle').textContent = friend.username;
+                document.getElementById('chatDescription').textContent = 'Direct message';
+            } else {
+                const group = groups.find(g => g.id === chatId);
+                if (group) {
+                    document.getElementById('chatTitle').textContent = '# ' + group.name;
+                    document.getElementById('chatDescription').textContent = 'Group chat';
+                }
+            }
+
+            displayMessages();
+            displayFriends();
+            displayGroups();
+        }
+
+        function openSettings() {
+            document.getElementById('settingsUserId').value = currentUser.id;
+            document.getElementById('settingsUsername').value = currentUser.username;
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function handleSettingsSave(e) {
+            e.preventDefault();
+
+            const newUsername = document.getElementById('settingsUsername').value.trim();
+
+            if (newUsername.length < 3) {
+                showAlert('settingsAlert', 'Username must be at least 3 characters');
+                return;
+            }
+
+            if (newUsername !== currentUser.username && users.some(u => u.username.toLowerCase() === newUsername.toLowerCase())) {
+                showAlert('settingsAlert', 'Username already taken');
+                return;
+            }
+
+            currentUser.username = newUsername;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex].username = newUsername;
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            showAlert('settingsAlert', 'Username updated successfully!', true);
+
+            setTimeout(() => {
+                closeSettings();
+                displayMessages();
+                displayFriends();
+            }, 1000);
+        }
+
+        function openCreateGroup() {
+            const code = generateGroupCode();
+            document.getElementById('generatedCode').value = code;
+            document.getElementById('groupName').value = '';
+            document.getElementById('createGroupModal').classList.add('active');
+        }
+
+        function closeCreateGroup() {
+            document.getElementById('createGroupModal').classList.remove('active');
+        }
+
+        function handleCreateGroup(e) {
+            e.preventDefault();
+
+            const groupName = document.getElementById('groupName').value.trim();
+            const groupCode = document.getElementById('generatedCode').value;
+
+            if (groupName.length < 3) {
+                showAlert('settingsAlert', 'Group name must be at least 3 characters');
+                return;
+            }
+
+            const newGroup = {
+                id: 'GROUP_' + Date.now(),
+                name: groupName,
+                code: groupCode,
+                createdBy: currentUser.id,
+                members: [currentUser.id],
+                createdAt: new Date().toISOString()
+            };
+
+            groups.push(newGroup);
+            localStorage.setItem('groups', JSON.stringify(groups));
+
+            userGroups.push(newGroup.id);
+            localStorage.setItem('userGroups_' + currentUser.id, JSON.stringify(userGroups));
+
+            allMessages[newGroup.id] = [];
+            localStorage.setItem('allMessages', JSON.stringify(allMessages));
+
+            showAlert('groupAlert', `Group "${groupName}" created with code: ${groupCode}`, true);
+            
+            setTimeout(() => {
+                closeCreateGroup();
+                displayGroups();
+            }, 1500);
+        }
+
+        function joinGroupByCode() {
+            const groupCode = document.getElementById('groupCodeInput').value.trim();
+            const alertDiv = document.getElementById('groupAlert');
+
+            if (!groupCode) {
+                alertDiv.textContent = 'Enter a group code';
+                return;
+            }
+
+            const group = groups.find(g => g.code === groupCode);
+            if (!group) {
+                alertDiv.textContent = 'Group not found';
+                return;
+            }
+
+            if (userGroups.includes(group.id)) {
+                alertDiv.textContent = 'Already in this group';
+                return;
+            }
+
+            userGroups.push(group.id);
+            localStorage.setItem('userGroups_' + currentUser.id, JSON.stringify(userGroups));
+
+            if (!group.members.includes(currentUser.id)) {
+                group.members.push(currentUser.id);
+                groups[groups.findIndex(g => g.id === group.id)] = group;
+                localStorage.setItem('groups', JSON.stringify(groups));
+            }
+
+            alertDiv.textContent = `Joined "${group.name}"!`;
+            document.getElementById('groupCodeInput').value = '';
+
+            displayGroups();
+
+            setTimeout(() => {
+                alertDiv.textContent = '';
+            }, 2000);
+        }
+
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 currentUser = null;
                 localStorage.removeItem('currentUser');
                 document.getElementById('chatContainer').classList.remove('active');
-                switchToSignIn();
+                document.getElementById('welcomeMenu').classList.add('active');
                 document.getElementById('signinForm').reset();
+                document.getElementById('signupForm').reset();
             }
         }
 
