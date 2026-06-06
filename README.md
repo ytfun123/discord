@@ -2,9 +2,23 @@
 
 Warning: this is not the real Discord and is not intended to copy the real Discord.
 
-Chillcord is a small realtime chat app with account signup, global chat, and friend direct messages.
+Chillcord is a small realtime chat site with account signup, global chat, and friend direct messages.
 
-## Run locally
+## Make It A Public Site
+
+GitHub Pages will not work for this app because people chatting together need a live Node server. Use Render, Railway, Fly.io, or another Node host.
+
+### Deploy On Render
+
+1. Go to https://render.com and sign in with GitHub.
+2. Click **New** > **Blueprint**.
+3. Select this repository: `ytfun123/discord`.
+4. Render will read `render.yaml` automatically.
+5. Click deploy.
+
+After deploy, Render gives you a public URL. Share that URL with people and they can create accounts, add friends by username, use global chat, and DM friends.
+
+## Run Locally
 
 ```bash
 npm install
@@ -13,7 +27,7 @@ npm start
 
 Open http://localhost:3000.
 
-## What was fixed
+## What Was Fixed
 
 The old version stored every account, friend, and message only in each browser's `localStorage`. That made global chat local to one browser and made friend lookup fail unless both accounts were created in the same browser.
 
@@ -27,13 +41,6 @@ This version adds a Node/Express + Socket.IO backend:
 
 If the backend is not running, the page still falls back to local demo storage so the UI remains usable.
 
-## Deploy
+## Important
 
-Deploy this as a Node app, not just a static GitHub Pages site. Services like Render, Railway, Fly.io, or a VPS can run it with:
-
-```bash
-npm install
-npm start
-```
-
-Set the start command to `npm start`. Most hosts will provide the `PORT` environment variable automatically.
+The current storage is simple file storage on the server. It is okay for testing and small demos, but for a serious public chat site you should use a real database such as PostgreSQL, MongoDB, Firebase, or Supabase.
