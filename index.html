@@ -4,28 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NexusChat</title>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg-app:#0f1117;--bg-sidebar:#1a1d27;--bg-main:#13161f;--bg-input:#1e2130;
+  --bg-app:#0f1117;--bg-sidebar:#1a1d27;--bg-channels:#161926;--bg-main:#13161f;--bg-input:#1e2130;
   --bg-hover:#252840;--bg-msg-own:#2d3561;--accent:#6c7cff;--accent-soft:#3d4699;
   --text-hi:#e8eaf6;--text-md:#9fa3c8;--text-lo:#5a5f80;--border:#2a2d42;
-  --green:#3dd68c;--red:#f05252;--gold:#f5c518;--purple:#c084fc;
+  --green:#3dd68c;--red:#f05252;--gold:#f5a623;--teal:#4ecdc4;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-app);color:var(--text-hi);font-size:14px;line-height:1.5;height:100vh;overflow:hidden}
 
-/* AUTH */
+/* ===== AUTH ===== */
 #auth-screen{position:fixed;inset:0;background:var(--bg-app);display:flex;align-items:center;justify-content:center;z-index:1000}
-.auth-box{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;padding:36px;width:360px;display:flex;flex-direction:column;gap:20px}
+.auth-box{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;padding:36px;width:370px;display:flex;flex-direction:column;gap:18px}
 .auth-logo{display:flex;align-items:center;gap:12px;justify-content:center}
-.auth-logo-icon{width:44px;height:44px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.auth-logo-icon{width:46px;height:46px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff}
 .auth-logo-name{font-size:22px;font-weight:700}
 .auth-tabs{display:flex;border-bottom:1px solid var(--border)}
 .auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;color:var(--text-lo);font-size:14px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
 .auth-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .auth-field{display:flex;flex-direction:column;gap:6px}
-.auth-field label{font-size:12px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.06em}
+.auth-field label{font-size:11px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.06em}
 .auth-field input{background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-hi);font-size:14px;outline:none;transition:border-color .15s}
 .auth-field input:focus{border-color:var(--accent)}
 .auth-field input::placeholder{color:var(--text-lo)}
@@ -34,168 +33,177 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .auth-btn:disabled{opacity:.5;cursor:not-allowed}
 .auth-error{background:#2a1515;border:1px solid var(--red);border-radius:8px;padding:10px 14px;color:#f87171;font-size:13px;display:none}
 .auth-error.show{display:block}
+.auth-note{text-align:center;font-size:12px;color:var(--text-lo)}
 
-/* APP SHELL — server rail + sidebar + main */
-#app{display:none;height:100vh;width:100%}
+/* ===== APP ===== */
+#app{display:none;height:100vh}
 .app{display:flex;height:100vh}
 
-/* server rail (left-most column, like Discord's) */
-.server-rail{width:64px;min-width:64px;background:#111420;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:6px;border-right:1px solid var(--border);overflow-y:auto}
-.server-rail::-webkit-scrollbar{width:0}
-.srv-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;transition:border-radius .2s,filter .2s;position:relative}
-.srv-icon:hover{border-radius:10px;filter:brightness(1.15)}
-.srv-icon.active{border-radius:10px;outline:3px solid var(--accent)}
-.srv-icon.global{background:var(--accent)}
-.srv-divider{width:32px;height:1px;background:var(--border);flex-shrink:0;margin:4px 0}
-.srv-add{width:44px;height:44px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:20px;transition:all .15s;flex-shrink:0}
-.srv-add:hover{border-color:var(--green);border-radius:14px}
+/* ===== SERVER BAR ===== */
+.server-bar{width:64px;background:#0d0f18;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:6px;flex-shrink:0;overflow-y:auto}
+.server-bar::-webkit-scrollbar{display:none}
+.srv-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:border-radius .2s,opacity .15s;position:relative;flex-shrink:0;color:#fff}
+.srv-icon:hover{border-radius:14px;opacity:.9}
+.srv-icon.active{border-radius:14px}
+.srv-pip{position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:4px;background:var(--text-hi);border-radius:0 3px 3px 0;height:0;transition:height .15s}
+.srv-icon:hover .srv-pip{height:8px}
+.srv-icon.active .srv-pip{height:22px}
+.srv-divider{width:32px;height:2px;background:var(--border);border-radius:2px;margin:2px 0;flex-shrink:0}
 
-/* sidebar */
-.sidebar{width:240px;min-width:240px;background:var(--bg-sidebar);display:flex;flex-direction:column;border-right:1px solid var(--border)}
-.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:52px}
-.sidebar-title{font-weight:700;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
-.sidebar-search input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text-hi);font-size:13px;outline:none}
-.sidebar-search input:focus{border-color:var(--accent)}
-.sidebar-search input::placeholder{color:var(--text-lo)}
-.sidebar-scroll{flex:1;overflow-y:auto}
+/* ===== CHANNEL SIDEBAR ===== */
+.sidebar{width:220px;min-width:220px;background:var(--bg-channels);display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.sidebar-header{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.server-name{font-weight:700;font-size:14px;color:var(--text-hi)}
+.sidebar-scroll{flex:1;overflow-y:auto;padding:8px 0}
 .sidebar-scroll::-webkit-scrollbar{width:3px}
 .sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.sidebar-section{padding:6px 0}
-.section-label{padding:6px 12px;font-size:11px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;justify-content:space-between}
-.section-add{cursor:pointer;font-size:17px;line-height:1;transition:color .15s}
+.section-label{padding:5px 12px;font-size:10px;font-weight:700;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.section-add{cursor:pointer;font-size:17px;color:var(--text-lo);transition:color .15s;line-height:1}
 .section-add:hover{color:var(--accent)}
-.ch-item{padding:6px 12px;cursor:pointer;border-radius:7px;margin:1px 6px;display:flex;align-items:center;gap:8px;transition:background .12s}
+.ch-item{padding:6px 12px;cursor:pointer;border-radius:6px;margin:1px 6px;display:flex;align-items:center;gap:8px;transition:background .12s}
 .ch-item:hover{background:var(--bg-hover)}
 .ch-item.active{background:var(--accent-soft)}
-.ch-item.active .ch-name{color:var(--text-hi)}
-.ch-icon{font-size:15px;color:var(--text-lo);width:16px;text-align:center;flex-shrink:0}
-.ch-item.active .ch-icon{color:#aab3ff}
+.ch-item.active .ch-name,.ch-item.active .ch-ico{color:var(--text-hi)}
+.ch-ico{font-size:14px;color:var(--text-lo);width:16px;text-align:center;flex-shrink:0}
 .ch-name{color:var(--text-md);font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dm-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;position:relative;color:#fff}
-.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);position:absolute;bottom:0;right:0;border:2px solid var(--bg-sidebar)}
+.dm-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:#fff;position:relative}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);position:absolute;bottom:0;right:0;border:2px solid var(--bg-channels)}
 .sidebar-bottom{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
-.my-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0;position:relative;color:#fff}
-.my-status{width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--bg-sidebar);position:absolute;bottom:0;right:0}
-.my-info{flex:1;overflow:hidden}
-.my-name{font-size:13px;font-weight:600}
-.my-tag{font-size:11px;color:var(--text-lo)}
-.my-role-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;margin-left:4px;vertical-align:middle}
-.role-C{background:#1a0a3a;color:var(--purple);border:1px solid var(--purple)}
-.role-A{background:#1a1000;color:var(--gold);border:1px solid var(--gold)}
-.role-M{background:#0a1f0a;color:var(--green);border:1px solid var(--green)}
-.icon-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-lo);transition:background .12s,color .12s;border:none;background:transparent;font-size:14px}
+.my-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0;color:#fff;position:relative}
+.my-dot{width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--bg-channels);position:absolute;bottom:0;right:0}
+.my-info{flex:1;overflow:hidden;min-width:0}
+.my-name{font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;overflow:hidden}
+.my-tag{font-size:10px;color:var(--text-lo)}
+.role-badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;text-transform:uppercase;flex-shrink:0}
+.role-C{background:#fff3cd;color:#856404}
+.role-A{background:#f8d7da;color:#721c24}
+.role-M{background:#d1ecf1;color:#0c5460}
+.icon-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-lo);border:none;background:transparent;font-size:14px;transition:all .12s;flex-shrink:0}
 .icon-btn:hover{background:var(--bg-hover);color:var(--text-hi)}
 
-/* main */
-.main{flex:1;display:flex;flex-direction:column;background:var(--bg-main);min-width:0}
-.chat-header{padding:0 20px;height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
-.chat-header-icon{font-size:18px;color:var(--text-lo)}
-.chat-header-name{font-weight:600;font-size:15px}
-.chat-header-desc{font-size:12px;color:var(--text-lo)}
-.header-actions{display:flex;gap:4px;margin-left:auto}
-.call-btn{display:flex;align-items:center;gap:6px;background:var(--accent-soft);border:none;color:#aab3ff;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
-.call-btn:hover{background:var(--accent);color:#fff}
+/* ===== MAIN ===== */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-header{padding:0 18px;height:50px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg-main)}
+.hdr-icon{font-size:16px;color:var(--text-lo);flex-shrink:0}
+.hdr-info{flex:1;min-width:0}
+.hdr-name{font-weight:600;font-size:15px}
+.hdr-desc{font-size:11px;color:var(--text-lo)}
+.hdr-actions{display:flex;gap:4px;flex-shrink:0}
+.call-btn{display:flex;align-items:center;gap:5px;background:var(--accent-soft);border:none;color:#aab3ff;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
+.call-btn:hover{background:var(--accent)}
+.call-btn.live{background:#1a3d1a;color:#6ee7b7}
+.call-btn.live:hover{background:#1f4d22}
 
-.messages-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:2px}
-.messages-area::-webkit-scrollbar{width:4px}
-.messages-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-.day-divider{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--text-lo);font-size:11px;font-weight:600;letter-spacing:.05em}
-.day-divider::before,.day-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-.msg-group{display:flex;gap:12px;padding:4px 6px;border-radius:8px;transition:background .1s}
-.msg-group:hover{background:rgba(255,255,255,.02)}
-.msg-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:2px;color:#fff}
-.msg-content{flex:1;min-width:0}
-.msg-header{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
-.msg-name{font-weight:600;font-size:13.5px}
+/* ===== MESSAGES ===== */
+.msgs{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:1px;background:var(--bg-main)}
+.msgs::-webkit-scrollbar{width:4px}
+.msgs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.day-div{display:flex;align-items:center;gap:10px;margin:10px 0 6px;color:var(--text-lo);font-size:11px;font-weight:600;letter-spacing:.05em}
+.day-div::before,.day-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.msg-row{display:flex;gap:10px;padding:3px 5px;border-radius:7px;transition:background .1s}
+.msg-row:hover{background:rgba(255,255,255,.025)}
+.msg-av{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:1px;color:#fff}
+.msg-body{flex:1;min-width:0}
+.msg-hdr{display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap}
+.msg-who{font-weight:600;font-size:13px}
+.msg-num{font-size:10px;color:var(--text-lo)}
 .msg-time{font-size:11px;color:var(--text-lo)}
-.msg-text{color:#cdd0eb;font-size:14px;line-height:1.55;word-break:break-word}
-.msg-own .msg-group{flex-direction:row-reverse}
-.msg-own .msg-header{flex-direction:row-reverse}
-.msg-own .msg-text{background:var(--bg-msg-own);border-radius:12px 4px 12px 12px;padding:8px 12px;display:inline-block;max-width:420px;float:right;clear:both}
-.empty-chat{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-lo)}
-.input-area{padding:12px 20px 16px;flex-shrink:0}
-.input-box{background:var(--bg-input);border:1px solid var(--border);border-radius:12px;display:flex;align-items:flex-end;gap:8px;padding:10px 12px;transition:border-color .15s}
+.msg-txt{color:#cdd0eb;font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
+.msg-own{flex-direction:row-reverse}
+.msg-own .msg-hdr{flex-direction:row-reverse}
+.msg-own .msg-txt{background:var(--bg-msg-own);border-radius:12px 3px 12px 12px;padding:7px 11px;display:inline-block;max-width:380px;float:right;clear:both}
+.empty-chat{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--text-lo)}
+.typing-bar{height:24px;padding:0 18px;display:flex;align-items:center;gap:7px;color:var(--text-lo);font-size:12px;flex-shrink:0;background:var(--bg-main)}
+.tdots{display:flex;gap:3px;align-items:center}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--text-lo);animation:bop .9s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+
+/* ===== INPUT ===== */
+.input-wrap{padding:8px 18px 12px;background:var(--bg-main);flex-shrink:0}
+.input-box{background:var(--bg-input);border:1px solid var(--border);border-radius:12px;display:flex;align-items:flex-end;gap:6px;padding:8px 11px;transition:border-color .15s}
 .input-box:focus-within{border-color:var(--accent)}
-.input-field{flex:1;background:transparent;border:none;outline:none;color:var(--text-hi);font-size:14px;resize:none;max-height:120px;min-height:22px;font-family:inherit;line-height:1.5}
-.input-field::placeholder{color:var(--text-lo)}
-.send-btn{width:32px;height:32px;border-radius:7px;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;font-size:14px}
+.msg-field{flex:1;background:transparent;border:none;outline:none;color:var(--text-hi);font-size:14px;resize:none;max-height:120px;min-height:22px;font-family:inherit;line-height:1.5}
+.msg-field::placeholder{color:var(--text-lo)}
+.send-btn{width:30px;height:30px;border-radius:7px;background:var(--accent);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .15s,opacity .15s;flex-shrink:0}
 .send-btn:hover{background:#7d8cff}
-.send-btn:disabled{opacity:.35;cursor:not-allowed}
+.send-btn:disabled{opacity:.3;cursor:not-allowed}
 
-/* CALL OVERLAY */
-.call-overlay{position:fixed;inset:0;background:rgba(8,10,18,.97);z-index:100;display:none;flex-direction:column}
-.call-overlay.active{display:flex}
-.call-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(0,0,0,.3);flex-shrink:0}
-.call-topbar-left{display:flex;flex-direction:column;gap:2px}
-.call-room-label{font-size:11px;color:var(--text-lo);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
-.call-room-name{font-size:18px;font-weight:700}
-.call-timer{font-size:13px;color:var(--green);font-weight:500}
-.call-videos{flex:1;display:grid;gap:10px;padding:14px;overflow:hidden;align-items:center;justify-items:center}
-.call-videos.one{grid-template-columns:1fr}
-.call-videos.two{grid-template-columns:1fr 1fr}
-.call-videos.four{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-.call-videos.many{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-.call-video-wrap{position:relative;width:100%;height:100%;border-radius:14px;overflow:hidden;background:#0b0d14;border:2px solid transparent;transition:border-color .3s;max-height:100%}
-.call-video-wrap video{width:100%;height:100%;object-fit:cover;display:block}
-.call-video-wrap .vid-label{position:absolute;bottom:10px;left:12px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;color:#fff}
-.call-audio-tile{width:100%;height:100%;border-radius:14px;background:var(--bg-sidebar);border:2px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:border-color .3s}
-.call-audio-tile .big-av{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff}
-.call-audio-tile .av-name{font-size:14px;font-weight:600}
-.call-controls{display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 20px;background:rgba(0,0,0,.3);flex-shrink:0}
-.call-ctrl{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:opacity .15s,transform .1s}
-.call-ctrl:hover{opacity:.85;transform:scale(1.07)}
-.call-ctrl.neutral{background:#252840;color:var(--text-hi)}
-.call-ctrl.active-ctrl{background:var(--accent);color:#fff}
-.call-ctrl.danger{background:var(--red);color:#fff}
-.call-ctrl.off-ctrl{background:#3a1c1c;color:var(--red)}
+/* ===== CALL OVERLAY ===== */
+#call-overlay{position:fixed;inset:0;background:rgba(8,9,15,.97);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#call-overlay.on{display:flex}
+.call-lbl{font-size:11px;color:var(--text-lo);text-transform:uppercase;letter-spacing:.1em}
+.call-who{font-size:24px;font-weight:700}
+.call-status-txt{font-size:13px;color:var(--text-md);min-height:20px}
+.call-avs{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin:4px 0}
+.call-av-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.call-av{width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;border:3px solid transparent;transition:all .3s;position:relative}
+.call-av.speaking{border-color:var(--green);box-shadow:0 0 0 4px rgba(61,214,140,.15)}
+.call-av .mutedbadge{position:absolute;bottom:1px;right:1px;width:18px;height:18px;border-radius:50%;background:var(--red);display:none;align-items:center;justify-content:center;font-size:9px;border:2px solid rgba(8,9,15,.97)}
+.call-av.is-muted .mutedbadge{display:flex}
+.call-av-name{font-size:10px;color:var(--text-lo);text-align:center;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-ctrls{display:flex;gap:12px;margin-top:4px}
+.ccbtn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px;transition:opacity .15s,transform .1s}
+.ccbtn:hover{opacity:.85;transform:scale(1.06)}
+.ccbtn.gray{background:#252840;color:var(--text-hi)}
+.ccbtn.on{background:var(--red);color:#fff}
+.ccbtn.red-bg{background:var(--red);color:#fff}
 
-/* INCOMING CALL */
-.incoming-call{position:fixed;bottom:24px;right:24px;background:#1a1d27;border:1px solid var(--accent);border-radius:16px;padding:18px 20px;width:300px;z-index:300;display:none;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(108,124,255,.25)}
-.incoming-call.active{display:flex}
-.incoming-call-info{display:flex;align-items:center;gap:12px}
-.incoming-call-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
-.incoming-call-from{font-weight:600;font-size:15px}
-.incoming-call-sub{font-size:12px;color:var(--text-lo)}
-.incoming-call-btns{display:flex;gap:10px}
-.ic-btn{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600}
-.ic-btn.accept{background:var(--green);color:#0a1a10}
-.ic-btn.decline{background:var(--red);color:#fff}
+/* ===== MODALS ===== */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;display:none;align-items:center;justify-content:center}
+.modal.on{display:flex}
+.mbox{background:#1c1f2e;border:1px solid var(--border);border-radius:16px;padding:22px;width:370px;display:flex;flex-direction:column;gap:13px;max-height:80vh;overflow-y:auto}
+.mtitle{font-size:15px;font-weight:700}
+.msub{font-size:12px;color:var(--text-lo)}
+.minput{background:var(--bg-app);border:1px solid var(--border);border-radius:8px;padding:9px 13px;color:var(--text-hi);font-size:14px;outline:none;width:100%;font-family:inherit}
+.minput:focus{border-color:var(--accent)}
+.mactions{display:flex;gap:10px;justify-content:flex-end}
+.mbtn{border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;border:none}
+.mbtn.cancel{background:transparent;border:1px solid var(--border);color:var(--text-md)}
+.mbtn.ok{background:var(--accent);color:#fff;font-weight:600}
+.mbtn.ok:hover{background:#7d8cff}
+.type-row{display:flex;gap:8px}
+.topt{flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;text-align:center;font-size:13px;color:var(--text-md);transition:all .15s}
+.topt.sel{border-color:var(--accent);background:var(--accent-soft);color:#aab3ff}
+.user-list{max-height:190px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.urow{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .12s}
+.urow:hover{background:var(--bg-hover)}
+.urow.sel{border-color:var(--accent);background:var(--accent-soft)}
 
-/* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center}
-.modal.active{display:flex}
-.modal-box{background:#1e2130;border:1px solid var(--border);border-radius:16px;padding:24px;width:400px;display:flex;flex-direction:column;gap:16px;max-height:90vh;overflow-y:auto}
-.modal-title{font-size:17px;font-weight:700}
-.modal-input{background:var(--bg-app);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text-hi);font-size:14px;outline:none;width:100%;font-family:inherit}
-.modal-input:focus{border-color:var(--accent)}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end}
-.btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-md);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px}
-.btn-primary{background:var(--accent);border:none;color:#fff;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600}
-.btn-primary:hover{background:#7d8cff}
-.type-select{display:flex;gap:10px}
-.type-opt{flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;text-align:center;font-size:13px;color:var(--text-md);transition:all .15s}
-.type-opt.sel{border-color:var(--accent);background:var(--accent-soft);color:#aab3ff}
+/* ===== SYNC STATUS ===== */
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-lo);flex-shrink:0;transition:background .3s}
+.sync-dot.ok{background:var(--green)}
+.sync-dot.err{background:var(--red)}
+.sync-dot.syncing{background:var(--gold);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#1e2130;border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:13px;z-index:999;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.error{border-color:var(--red);color:#f87171}
-.toast.success{border-color:var(--green);color:#6ee7b7}
-.loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text-lo);font-size:13px;padding:20px}
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:20px;right:20px;background:#1e2130;border:1px solid var(--border);border-radius:10px;padding:10px 15px;font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;max-width:280px}
+.toast.on{opacity:1;transform:translateY(0)}
+.toast.err{border-color:var(--red);color:#f87171}
+.toast.ok{border-color:var(--green);color:#6ee7b7}
 </style>
 </head>
 <body>
 
+<!-- ===================== CONFIG ===================== -->
 <script>
-// ===== CONFIG — fill these in =====
-const SUPABASE_URL        = 'https://spulajtpzpwmdoixjsmo.supabase.co';
-const SUPABASE_SERVICE_KEY= 'sb_publishable_nNxlpUfS4y_0KgbJS-U9PA_ZzTQA9xk';
-const SHEETS_WEBAPP_URL   = 'https://script.google.com/macros/s/AKfycbyEQX6eY9s9A8H73V3EYkdOF_AoiKL209JLZz4HyhxCU9_7ud-mB3Ac5jqQtMLm2e_P/exec'; // see NexusChat_Sheets.gs
-const POLL_INTERVAL       = 3000;
+// 🔧 SUPABASE — your project values
+const SUPABASE_URL = 'https://spulajtpzpwmdoixjsmo.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_nNxlpUfS4y_0KgbJS-U9PA_ZzTQA9xk';
+
+// 🔧 GOOGLE SHEETS — paste your Apps Script Web App URL here after deploying
+// Leave blank if you haven't set it up yet — everything else still works
+const GSCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwXpG6x1L6r-qLovJQiO8cVYCiP1BBopyPP7FH31k12J_rNnMlna9x3GaBrRfmRSS1Y/exec';
+
+// 🔧 SHEET ID (already filled in from your link)
+const SHEET_ID = '17Qbbdnfy9YcvFXcigNlfmp6o-97b281UE22bGtLd1wM';
+
+// How often to check for new messages (milliseconds)
+const POLL_MS = 3000;
 </script>
 
-<!-- AUTH -->
+<!-- ===================== AUTH SCREEN ===================== -->
 <div id="auth-screen">
   <div class="auth-box">
     <div class="auth-logo">
@@ -207,883 +215,993 @@ const POLL_INTERVAL       = 3000;
       <div class="auth-tab" onclick="switchTab('register')">Create account</div>
     </div>
     <div class="auth-error" id="auth-error"></div>
-    <div class="auth-field"><label>Username</label><input type="text" id="auth-username" placeholder="your_username" maxlength="30" autocomplete="off"></div>
-    <div class="auth-field"><label>Password</label><input type="password" id="auth-password" placeholder="••••••••" autocomplete="off"></div>
-    <div class="auth-field" id="confirm-field" style="display:none"><label>Confirm password</label><input type="password" id="auth-confirm" placeholder="••••••••"></div>
-    <button class="auth-btn" id="auth-submit" onclick="submitAuth()">Sign in</button>
-    <div style="text-align:center;font-size:12px;color:var(--text-lo)">No email required · Username only</div>
+    <div class="auth-field">
+      <label>Username</label>
+      <input id="au" type="text" placeholder="your_username" maxlength="30" autocomplete="off"
+        onkeydown="if(event.key==='Enter')submitAuth()">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input id="ap" type="password" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')submitAuth()">
+    </div>
+    <div class="auth-field" id="confirm-wrap" style="display:none">
+      <label>Confirm password</label>
+      <input id="ac" type="password" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')submitAuth()">
+    </div>
+    <button class="auth-btn" id="auth-btn" onclick="submitAuth()">Sign in</button>
+    <div class="auth-note">No email required · Username only</div>
   </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- ===================== MAIN APP ===================== -->
 <div id="app">
 <div class="app">
 
-  <!-- SERVER RAIL -->
-  <div class="server-rail" id="server-rail">
-    <!-- Global chat pill always first -->
-    <div class="srv-icon global active" id="srv-global" onclick="selectServer('global')" title="Global Chat">🌐</div>
+  <!-- SERVER BAR (leftmost column) -->
+  <div class="server-bar">
+    <!-- Global Chat -->
+    <div class="srv-icon active" id="srv-global" onclick="goGlobal()" title="Global Chat"
+      style="background:var(--accent);font-size:20px">
+      🌐<div class="srv-pip"></div>
+    </div>
     <div class="srv-divider"></div>
-    <div id="server-icons"></div>
-    <div class="srv-add" onclick="openModal('server')" title="Create server">+</div>
+    <!-- NexusChat Server (channels) -->
+    <div class="srv-icon" id="srv-main" onclick="goServer()" title="NexusChat Server"
+      style="background:#252840;color:var(--accent);font-weight:800;font-size:15px;letter-spacing:-.5px">
+      NC<div class="srv-pip"></div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="srv-icon" onclick="showToast('More servers coming soon!')" title="Add Server"
+      style="background:#1e2130;color:var(--green);font-size:24px">
+      +
+    </div>
   </div>
 
-  <!-- SIDEBAR -->
+  <!-- CHANNEL SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-title" id="sidebar-title">Global Chat</div>
-      <button class="icon-btn" style="margin-left:auto" onclick="logout()" title="Sign out">🚪</button>
-    </div>
-    <div class="sidebar-search">
-      <input type="text" placeholder="Search…" oninput="filterSidebar(this.value)">
-    </div>
-    <div class="sidebar-scroll" id="sidebar-scroll">
-      <!-- filled dynamically -->
-    </div>
-    <div class="sidebar-bottom">
-      <div class="my-avatar" id="my-avatar"><div class="my-status"></div></div>
-      <div class="my-info">
-        <div class="my-name" id="my-username-display">…</div>
-        <div class="my-tag" id="my-role-tag">Online</div>
+      <span class="server-name" id="server-title">🌐 Global</span>
+      <!-- Sync dot shows Google Sheets sync status -->
+      <div style="display:flex;align-items:center;gap:5px" title="Google Sheets sync status">
+        <div class="sync-dot" id="sync-dot"></div>
       </div>
-      <button class="icon-btn" title="Settings" onclick="showToast('Settings coming soon!')">⚙️</button>
+    </div>
+    <div class="sidebar-scroll" id="sidebar-scroll"></div>
+    <div class="sidebar-bottom">
+      <div class="my-av" id="my-av"><div class="my-dot"></div></div>
+      <div class="my-info">
+        <div class="my-name" id="my-name-el">…</div>
+        <div class="my-tag" id="my-tag-el">Online</div>
+      </div>
+      <button class="icon-btn" id="mic-btn" onclick="toggleMyMic()" title="Toggle mic">🎙️</button>
+      <button class="icon-btn" onclick="logout()" title="Sign out">🚪</button>
     </div>
   </div>
 
-  <!-- MAIN CHAT -->
+  <!-- MAIN CHAT AREA -->
   <div class="main">
     <div class="chat-header">
-      <span class="chat-header-icon" id="header-icon">🌐</span>
-      <div style="min-width:0">
-        <div class="chat-header-name" id="header-name">Global Chat</div>
-        <div class="chat-header-desc" id="header-desc">Everyone on NexusChat</div>
+      <span class="hdr-icon" id="hdr-icon">🌐</span>
+      <div class="hdr-info">
+        <div class="hdr-name" id="hdr-name">Global Chat</div>
+        <div class="hdr-desc" id="hdr-desc">Everyone is here</div>
       </div>
-      <div class="header-actions">
-        <button class="icon-btn" onclick="showToast('Search coming soon!')">🔍</button>
-        <button class="icon-btn" onclick="showToast('Members coming soon!')">👥</button>
-        <button class="call-btn" id="start-call-btn" onclick="startCall()">📞 Call</button>
+      <div class="hdr-actions">
+        <button class="icon-btn" onclick="openSheetLink()" title="Open Google Sheet">📊</button>
+        <button class="call-btn" id="call-btn" onclick="toggleCall()">📞 Call</button>
       </div>
     </div>
-    <div class="messages-area" id="messages-area">
-      <div class="loading">Loading…</div>
+
+    <div class="msgs" id="msgs">
+      <div class="empty-chat"><div style="font-size:28px">💬</div><div style="font-size:13px">Loading…</div></div>
     </div>
-    <div class="input-area">
+
+    <div class="typing-bar" id="typing-bar" style="visibility:hidden">
+      <div class="tdots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <span id="typing-txt"></span>
+    </div>
+
+    <div class="input-wrap">
       <div class="input-box">
-        <textarea class="input-field" id="msg-input" placeholder="Message Global Chat" rows="1"
-          onkeydown="handleKey(event)" oninput="handleInput(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendMessage()" disabled>➤</button>
+        <button class="icon-btn" onclick="showToast('File upload coming soon!')">📎</button>
+        <textarea class="msg-field" id="msg-in" placeholder="Message Global Chat…" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="icon-btn" onclick="showToast('Emoji coming soon!')">😊</button>
+        <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>➤</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- CALL OVERLAY -->
-<div class="call-overlay" id="call-overlay">
-  <div class="call-topbar">
-    <div class="call-topbar-left">
-      <div class="call-room-label">Call</div>
-      <div class="call-room-name" id="call-room-name"></div>
-      <div class="call-timer" id="call-timer">Connecting…</div>
-    </div>
-    <div style="font-size:12px;color:var(--text-lo)" id="call-participants-count">Just you</div>
-  </div>
-  <div class="call-videos" id="call-videos"></div>
-  <div class="call-controls">
-    <button class="call-ctrl off-ctrl" id="ctrl-mic"    onclick="toggleCallMic()"    title="Mic">🔇</button>
-    <button class="call-ctrl neutral"  id="ctrl-cam"    onclick="toggleCallCam()"    title="Camera">🚫📷</button>
-    <button class="call-ctrl neutral"  id="ctrl-screen" onclick="toggleScreenShare()" title="Screen share">🖥️</button>
-    <button class="call-ctrl danger"   id="ctrl-end"    onclick="endCall()"           title="End call">📵</button>
+<!-- ===== CALL OVERLAY ===== -->
+<div id="call-overlay">
+  <div class="call-lbl">Voice Call</div>
+  <div class="call-who" id="call-who"></div>
+  <div class="call-status-txt" id="call-status">Connecting…</div>
+  <div class="call-avs" id="call-avs"></div>
+  <div class="call-ctrls">
+    <button class="ccbtn gray" id="mute-btn" onclick="toggleMute()" title="Mute">🎙️</button>
+    <button class="ccbtn gray" id="spk-btn" onclick="toggleSpeaker()" title="Speaker">🔊</button>
+    <button class="ccbtn red-bg" onclick="endCall()" title="End call">📵</button>
   </div>
 </div>
 
-<!-- INCOMING CALL -->
-<div class="incoming-call" id="incoming-call">
-  <div class="incoming-call-info">
-    <div class="incoming-call-av" id="inc-avatar"></div>
-    <div>
-      <div class="incoming-call-from" id="inc-from">Someone</div>
-      <div class="incoming-call-sub">📞 Incoming call…</div>
+<!-- ===== CREATE CHANNEL MODAL ===== -->
+<div class="modal" id="ch-modal">
+  <div class="mbox">
+    <div class="mtitle">Create a channel</div>
+    <div class="type-row">
+      <div class="topt sel" onclick="setChType('text',this)">💬 Text</div>
+      <div class="topt" onclick="setChType('voice',this)">🔊 Voice</div>
     </div>
-  </div>
-  <div class="incoming-call-btns">
-    <button class="ic-btn accept" onclick="acceptCall()">✓ Accept</button>
-    <button class="ic-btn decline" onclick="declineCall()">✕ Decline</button>
+    <input class="minput" id="ch-name-in" placeholder="channel-name" maxlength="40"
+      onkeydown="if(event.key==='Enter')submitChModal()">
+    <div class="mactions">
+      <button class="mbtn cancel" onclick="closeModal('ch-modal')">Cancel</button>
+      <button class="mbtn ok" onclick="submitChModal()">Create</button>
+    </div>
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <div class="modal-title" id="modal-title">…</div>
-    <div id="modal-body"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-primary" id="modal-submit" onclick="submitModal()">Create</button>
+<!-- ===== NEW DM MODAL ===== -->
+<div class="modal" id="dm-modal">
+  <div class="mbox">
+    <div class="mtitle">Start a direct message</div>
+    <div class="msub">Only users you choose will appear in your DM list</div>
+    <input class="minput" id="dm-search" placeholder="Search users…" oninput="filterUsers(this.value)">
+    <div class="user-list" id="user-list"></div>
+    <div class="mactions">
+      <button class="mbtn cancel" onclick="closeModal('dm-modal')">Cancel</button>
+      <button class="mbtn ok" onclick="submitDmModal()">Open DM</button>
     </div>
   </div>
 </div>
-</div>
+</div><!-- end #app -->
 
 <div class="toast" id="toast"></div>
+<audio id="local-audio" muted autoplay playsinline></audio>
+<div id="remote-audios"></div>
 
+<!-- ===================== JAVASCRIPT ===================== -->
 <script>
-// ================================================================
-// STATE
-// ================================================================
-let session   = null;
-let activeChat= null;   // {type:'global'|'channel'|'dm', id, name, desc, icon, serverId?, userId?}
-let channels  = [];     // server channels for current server
-let allUsers  = [];
-let servers   = [];     // {id, name, icon, color}
-let activeServerId = 'global';
-let pollTimer = null;
-let modalCtx  = '';
+// ===================================================
+//  STATE
+// ===================================================
+let me = null, token = null;
+let channels = [], allUsers = [], myDMs = [];
+let active = null;
+let view = 'global'; // 'global' | 'server' | 'dm'
+let pollTimer = null, syncTimer = null;
+let newChType = 'text', selectedUser = null;
 
-const ROLE_LABELS = {C:'Creator', A:'Admin', M:'Mod'};
-const ROLE_COLORS = {C:'purple', A:'gold', M:'green'};
+// Call
+let inCall = false, muted = false, speakerOff = false;
+let localStream = null, peers = {}, callTimer = null, callSecs = 0, callId = null;
+let signalPollTimer = null;
+const ICE_SERVERS = [
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'}
+];
 
-// ================================================================
-// SUPABASE
-// ================================================================
+// ===================================================
+//  SUPABASE API
+// ===================================================
 async function rpc(fn, params={}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','apikey':SUPABASE_SERVICE_KEY,'Authorization':`Bearer ${SUPABASE_SERVICE_KEY}`},
-    body:JSON.stringify(params)
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
+    body: JSON.stringify(params)
   });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.message||'API error');
-  return data;
-}
-async function supaGet(table, qs='') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${qs}`, {
-    headers:{'apikey':SUPABASE_SERVICE_KEY,'Authorization':`Bearer ${SUPABASE_SERVICE_KEY}`}
-  });
-  return res.json();
-}
-async function supaPost(table, body) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Prefer':'return=representation','apikey':SUPABASE_SERVICE_KEY,'Authorization':`Bearer ${SUPABASE_SERVICE_KEY}`},
-    body:JSON.stringify(body)
-  });
-  if(!res.ok){const e=await res.json();throw new Error(e.message);}
-  return res.json();
+  const txt = await r.text();
+  let d;
+  try { d = JSON.parse(txt); } catch(e) { throw new Error('Bad response: ' + txt.slice(0,100)); }
+  if (!r.ok) throw new Error(d.message || d.error || JSON.stringify(d));
+  return d;
 }
 
-// ================================================================
-// AUTH
-// ================================================================
-let authMode='login';
-function switchTab(mode){
-  authMode=mode;
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0)===(mode==='login')));
-  document.getElementById('confirm-field').style.display=mode==='register'?'flex':'none';
-  document.getElementById('auth-submit').textContent=mode==='login'?'Sign in':'Create account';
-  document.getElementById('auth-error').classList.remove('show');
+async function dbGet(table, q='') {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${q}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error('DB get failed: ' + r.status);
+  return r.json();
 }
-function showAuthError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show')}
 
-async function submitAuth(){
-  const username=document.getElementById('auth-username').value.trim();
-  const password=document.getElementById('auth-password').value;
-  const confirm =document.getElementById('auth-confirm').value;
-  document.getElementById('auth-error').classList.remove('show');
-  if(!username||!password) return showAuthError('Please fill in all fields');
-  if(username.length<3) return showAuthError('Username must be at least 3 chars');
-  if(password.length<6) return showAuthError('Password must be at least 6 chars');
-  if(authMode==='register'&&password!==confirm) return showAuthError('Passwords do not match');
-  const btn=document.getElementById('auth-submit');
-  btn.disabled=true; btn.textContent='…';
+async function dbPost(table, body) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.message || JSON.stringify(d));
+  return d;
+}
+
+// ===================================================
+//  GOOGLE SHEETS SYNC
+// ===================================================
+function setSyncDot(state) {
+  // state: 'idle' | 'syncing' | 'ok' | 'err'
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot' + (state !== 'idle' ? ' ' + state : '');
+  dot.title = {
+    idle: 'Google Sheets: not configured',
+    syncing: 'Syncing to Google Sheets…',
+    ok: 'Synced to Google Sheets ✓',
+    err: 'Google Sheets sync failed'
+  }[state] || '';
+}
+
+async function syncToSheet(userData) {
+  if (!GSCRIPT_URL) { setSyncDot('idle'); return; }
+  setSyncDot('syncing');
   try {
-    const fn=authMode==='login'?'login_user':'register_user';
-    const result=await rpc(fn,{p_username:username,p_password:password});
-    if(result.error){showAuthError(result.error);return;}
-    session=result;
-    localStorage.setItem('nexuschat_token',result.token);
-    await initApp();
-  } catch(e){showAuthError('Could not connect. Check your Supabase config.');}
-  finally{btn.disabled=false;btn.textContent=authMode==='login'?'Sign in':'Create account';}
-}
-
-async function tryAutoLogin(){
-  const token=localStorage.getItem('nexuschat_token');
-  if(!token) return;
-  try{
-    const r=await rpc('validate_session',{p_token:token});
-    if(r.error){localStorage.clear();return;}
-    session={user:r.user,token};
-    await initApp();
-  }catch(e){localStorage.clear();}
-}
-
-function logout(){
-  endCall(); destroyPeer(); localStorage.clear(); session=null;
-  clearInterval(pollTimer);
-  document.getElementById('app').style.display='none';
-  document.getElementById('auth-screen').style.display='flex';
-}
-
-// ================================================================
-// INIT
-// ================================================================
-async function initApp(){
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('app').style.display='block';
-  const u=session.user;
-  const av=document.getElementById('my-avatar');
-  av.style.background=u.avatar_color; av.textContent=u.username.slice(0,2).toUpperCase();
-  av.innerHTML+=`<div class="my-status"></div>`;
-  document.getElementById('my-username-display').textContent=u.username;
-
-  await loadUsers();
-  await loadServers();
-
-  // Start on Global Chat
-  selectServer('global');
-
-  pollTimer=setInterval(pollMessages,POLL_INTERVAL);
-  initPeer();
-
-  // Sync to Google Sheets
-  syncUserToSheets(u);
-}
-
-// ================================================================
-// GOOGLE SHEETS SYNC
-// ================================================================
-async function syncUserToSheets(user){
-  if(!SHEETS_WEBAPP_URL||SHEETS_WEBAPP_URL==='YOUR_GOOGLE_APPS_SCRIPT_WEBAPP_URL') return;
-  try{
-    await fetch(SHEETS_WEBAPP_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        action:'upsert_user',
-        userId: user.id,
-        username: user.username,
-        avatarColor: user.avatar_color,
-        lastSeen: new Date().toISOString()
+    await fetch(GSCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors', // Google Apps Script requires this from browser
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sync_user',
+        sheet_id: SHEET_ID,
+        user: userData || {
+          id: me.id,
+          join_number: me.join_number,
+          username: me.username,
+          avatar_color: me.avatar_color,
+          role: me.role || '',
+          status: 'online',
+          created_at: me.created_at || new Date().toISOString(),
+          last_seen: new Date().toISOString()
+        }
       })
     });
-  }catch(e){console.warn('Sheets sync failed',e);}
+    // no-cors means we can't read response, so assume ok
+    setSyncDot('ok');
+    setTimeout(() => setSyncDot('idle'), 4000);
+  } catch(e) {
+    setSyncDot('err');
+    console.warn('Sheet sync failed:', e.message);
+  }
 }
 
-async function updateRoleInSheets(userId, role){
-  if(!SHEETS_WEBAPP_URL||SHEETS_WEBAPP_URL.includes('YOUR_')) return;
-  try{
-    await fetch(SHEETS_WEBAPP_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'set_role', userId, role})
+// Sync every 5 minutes while logged in to keep last_seen fresh
+function startSyncTimer() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => syncToSheet(), 5 * 60 * 1000);
+}
+
+// ===================================================
+//  AUTH
+// ===================================================
+let authMode = 'login';
+
+function switchTab(m) {
+  authMode = m;
+  document.querySelectorAll('.auth-tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0) === (m==='login')));
+  document.getElementById('confirm-wrap').style.display = m==='register' ? 'flex' : 'none';
+  document.getElementById('auth-btn').textContent = m==='login' ? 'Sign in' : 'Create account';
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+function showAuthErr(msg) {
+  const e = document.getElementById('auth-error');
+  e.textContent = msg;
+  e.classList.add('show');
+}
+
+async function submitAuth() {
+  const u = document.getElementById('au').value.trim();
+  const p = document.getElementById('ap').value;
+  const c = document.getElementById('ac').value;
+  document.getElementById('auth-error').classList.remove('show');
+
+  if (!u || !p) return showAuthErr('Fill in all fields');
+  if (u.length < 3) return showAuthErr('Username must be at least 3 characters');
+  if (p.length < 6) return showAuthErr('Password must be at least 6 characters');
+  if (authMode === 'register' && p !== c) return showAuthErr('Passwords do not match');
+
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
+
+  try {
+    const fn = authMode === 'login' ? 'login_user' : 'register_user';
+    const res = await rpc(fn, { p_username: u, p_password: p });
+    if (res && res.error) return showAuthErr(res.error);
+
+    me = res.user;
+    token = res.token;
+    localStorage.setItem('nc_token', token);
+    localStorage.setItem('nc_user', JSON.stringify(me));
+
+    // Sync to Google Sheets right after login/register
+    await syncToSheet();
+    await bootApp();
+  } catch(e) {
+    showAuthErr('Connection failed: ' + e.message);
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Sign in' : 'Create account';
+  }
+}
+
+async function tryAutoLogin() {
+  const t = localStorage.getItem('nc_token');
+  if (!t) return;
+  try {
+    const r = await rpc('validate_session', { p_token: t });
+    if (r && r.error) { localStorage.clear(); return; }
+    me = r.user;
+    token = t;
+    // Update last_seen in sheet
+    await syncToSheet();
+    await bootApp();
+  } catch(e) {
+    localStorage.clear();
+  }
+}
+
+function logout() {
+  localStorage.clear();
+  me = null; token = null;
+  clearInterval(pollTimer);
+  clearInterval(syncTimer);
+  if (inCall) endCall();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// ===================================================
+//  BOOT
+// ===================================================
+async function bootApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  // Set avatar
+  const avEl = document.getElementById('my-av');
+  avEl.style.background = me.avatar_color;
+  avEl.textContent = me.username.slice(0,2).toUpperCase();
+  avEl.innerHTML += `<div class="my-dot"></div>`;
+
+  // Set name + role badge
+  const nameEl = document.getElementById('my-name-el');
+  const badgeHTML = me.role ? ` <span class="role-badge role-${me.role}">${roleName(me.role)}</span>` : '';
+  nameEl.innerHTML = escH(me.username) + badgeHTML;
+
+  // Set join number
+  document.getElementById('my-tag-el').textContent =
+    me.join_number ? `#${me.join_number} · Online` : 'Online';
+
+  // Load server data
+  channels = await dbGet('channels', '?order=created_at.asc');
+  await loadAllUsers();
+
+  // Load saved DMs from localStorage
+  myDMs = JSON.parse(localStorage.getItem('nc_dms') || '[]');
+
+  // Start at global chat
+  goGlobal();
+
+  // Start polling for messages
+  pollTimer = setInterval(poll, POLL_MS);
+
+  // Start sheet sync timer
+  startSyncTimer();
+}
+
+async function loadAllUsers() {
+  try {
+    const r = await rpc('get_users', { p_token: token });
+    if (Array.isArray(r)) allUsers = r;
+  } catch(e) {}
+}
+
+function openSheetLink() {
+  window.open(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`, '_blank');
+}
+
+// ===================================================
+//  VIEWS / NAVIGATION
+// ===================================================
+function goGlobal() {
+  view = 'global';
+  document.getElementById('srv-global').classList.add('active');
+  document.getElementById('srv-main').classList.remove('active');
+  document.getElementById('server-title').textContent = '🌐 Global';
+  active = { type:'global', name:'Global Chat', icon:'🌐', desc:'Everyone is here' };
+  renderSidebar();
+  updateHeader();
+  loadMsgs();
+}
+
+function goServer() {
+  view = 'server';
+  document.getElementById('srv-main').classList.add('active');
+  document.getElementById('srv-global').classList.remove('active');
+  document.getElementById('server-title').textContent = '💬 NexusChat';
+  // Pick general or first channel
+  if (!active || active.type === 'global') {
+    const g = channels.find(c => c.name === 'general') || channels[0];
+    if (g) active = { type:'channel', id:g.id, name:g.name, desc:g.description||'', icon:g.type==='voice'?'🔊':'#' };
+  }
+  renderSidebar();
+  updateHeader();
+  loadMsgs();
+}
+
+function goChannel(id, name, desc, type) {
+  view = 'server';
+  active = { type:'channel', id, name, desc, icon: type==='voice' ? '🔊' : '#' };
+  document.getElementById('srv-main').classList.add('active');
+  document.getElementById('srv-global').classList.remove('active');
+  document.getElementById('server-title').textContent = '💬 NexusChat';
+  renderSidebar();
+  updateHeader();
+  loadMsgs();
+}
+
+function goDM(userId, username, color) {
+  view = 'dm';
+  active = { type:'dm', id:'dm-'+userId, userId, name:username, icon:'💬', desc:'Direct message', color };
+  document.getElementById('srv-global').classList.remove('active');
+  document.getElementById('srv-main').classList.remove('active');
+  document.getElementById('server-title').textContent = '💬 Messages';
+  renderSidebar();
+  updateHeader();
+  loadMsgs();
+}
+
+function updateHeader() {
+  if (!active) return;
+  document.getElementById('hdr-icon').textContent = active.icon;
+  document.getElementById('hdr-name').textContent = active.name;
+  document.getElementById('hdr-desc').textContent = active.desc || '';
+  const placeholder = active.type === 'dm'
+    ? `Message ${active.name}…`
+    : active.type === 'global'
+      ? 'Message everyone…'
+      : `Message #${active.name}…`;
+  document.getElementById('msg-in').placeholder = placeholder;
+}
+
+// ===================================================
+//  SIDEBAR RENDER
+// ===================================================
+function renderSidebar() {
+  const el = document.getElementById('sidebar-scroll');
+
+  const dmItems = myDMs.map(u => `
+    <div class="ch-item${active?.id==='dm-'+u.id?' active':''}"
+      onclick="goDM('${esc(u.id)}','${esc(u.username)}','${esc(u.avatar_color||'#6c7cff')}')">
+      <div class="dm-av" style="background:${u.avatar_color||'#6c7cff'}">${u.username.slice(0,2).toUpperCase()}</div>
+      <span class="ch-name">${escH(u.username)}</span>
+    </div>`).join('');
+
+  if (view === 'global') {
+    el.innerHTML = `
+      <div class="section-label">Global</div>
+      <div class="ch-item active">
+        <span class="ch-ico">🌐</span>
+        <span class="ch-name">Global Chat</span>
+      </div>
+      <div class="section-label" style="margin-top:16px">
+        Direct Messages
+        <span class="section-add" onclick="openModal('dm')" title="New DM">+</span>
+      </div>
+      ${dmItems || '<div style="padding:4px 12px;font-size:12px;color:var(--text-lo)">No DMs yet</div>'}`;
+
+  } else if (view === 'server') {
+    const textChs = channels.filter(c => c.type === 'text').map(c => `
+      <div class="ch-item${active?.id===c.id?' active':''}"
+        onclick="goChannel('${esc(c.id)}','${esc(c.name)}','${esc(c.description||'')}','${c.type}')">
+        <span class="ch-ico">#</span>
+        <span class="ch-name">${escH(c.name)}</span>
+      </div>`).join('');
+
+    const voiceChs = channels.filter(c => c.type === 'voice').map(c => `
+      <div class="ch-item${active?.id===c.id?' active':''}"
+        onclick="goChannel('${esc(c.id)}','${esc(c.name)}','${esc(c.description||'')}','${c.type}')">
+        <span class="ch-ico">🔊</span>
+        <span class="ch-name">${escH(c.name)}</span>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div class="section-label">
+        Text Channels
+        <span class="section-add" onclick="openModal('channel')" title="New channel">+</span>
+      </div>
+      ${textChs}
+      ${voiceChs ? `<div class="section-label" style="margin-top:8px">Voice Channels</div>${voiceChs}` : ''}
+      <div class="section-label" style="margin-top:16px">
+        Direct Messages
+        <span class="section-add" onclick="openModal('dm')" title="New DM">+</span>
+      </div>
+      ${dmItems || '<div style="padding:4px 12px;font-size:12px;color:var(--text-lo)">No DMs yet</div>'}`;
+
+  } else if (view === 'dm') {
+    el.innerHTML = `
+      <div class="section-label">
+        Direct Messages
+        <span class="section-add" onclick="openModal('dm')" title="New DM">+</span>
+      </div>
+      ${dmItems}`;
+  }
+}
+
+// ===================================================
+//  MESSAGES
+// ===================================================
+async function loadMsgs() {
+  document.getElementById('msgs').innerHTML =
+    `<div class="empty-chat"><div style="font-size:26px">💬</div><div style="font-size:13px">Loading…</div></div>`;
+  try {
+    renderMsgs(await fetchMsgs() || []);
+  } catch(e) {
+    showToast('Failed to load messages', 'err');
+    console.error(e);
+  }
+}
+
+async function fetchMsgs() {
+  if (!active) return [];
+  if (active.type === 'global') return rpc('get_global_messages', { p_token: token });
+  if (active.type === 'channel') return rpc('get_channel_messages', { p_token: token, p_channel_id: active.id });
+  return rpc('get_direct_messages', { p_token: token, p_other_user_id: active.userId });
+}
+
+function roleName(r) {
+  return { C:'Creator', A:'Admin', M:'Mod' }[r] || r;
+}
+
+function roleBadge(role) {
+  if (!role) return '';
+  return `<span class="role-badge role-${role}">${roleName(role)}</span>`;
+}
+
+function renderMsgs(msgs) {
+  const el = document.getElementById('msgs');
+  if (!msgs || !msgs.length) {
+    el.innerHTML = `<div class="empty-chat"><div style="font-size:34px">💬</div><div>No messages yet — say hello!</div></div>`;
+    return;
+  }
+
+  let h = `<div style="flex:1"></div><div class="day-div">Today</div>`;
+
+  msgs.forEach(m => {
+    const isMe = m.sender.id === me.id;
+    const ini = m.sender.username.slice(0,2).toUpperCase();
+    const t = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const av = `<div class="msg-av" style="background:${m.sender.avatar_color}">${ini}</div>`;
+    const badge = roleBadge(m.sender.role);
+    const numTag = m.sender.join_number
+      ? `<span class="msg-num">#${m.sender.join_number}</span>`
+      : '';
+
+    if (isMe) {
+      h += `<div class="msg-row msg-own">${av}<div class="msg-body">
+        <div class="msg-hdr">
+          <span class="msg-who" style="color:var(--accent)">You</span>
+          ${badge}
+          <span class="msg-time">${t}</span>
+        </div>
+        <div><span class="msg-txt">${escH(m.content)}</span></div>
+      </div></div>`;
+    } else {
+      h += `<div class="msg-row">${av}<div class="msg-body">
+        <div class="msg-hdr">
+          <span class="msg-who" style="color:${m.sender.avatar_color}">${escH(m.sender.username)}</span>
+          ${numTag}${badge}
+          <span class="msg-time">${t}</span>
+        </div>
+        <div class="msg-txt">${escH(m.content)}</div>
+      </div></div>`;
+    }
+  });
+
+  el.innerHTML = h;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function poll() {
+  if (!active || !token) return;
+  try { renderMsgs(await fetchMsgs() || []); } catch(e) {}
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('msg-in');
+  const txt = inp.value.trim();
+  if (!txt || !token) return;
+
+  inp.value = '';
+  inp.style.height = '';
+  document.getElementById('send-btn').disabled = true;
+
+  try {
+    if (active.type === 'global') {
+      await rpc('send_global_message', { p_token: token, p_content: txt });
+    } else if (active.type === 'channel') {
+      await rpc('send_channel_message', { p_token: token, p_channel_id: active.id, p_content: txt });
+    } else {
+      await rpc('send_direct_message', { p_token: token, p_receiver_id: active.userId, p_content: txt });
+    }
+    renderMsgs(await fetchMsgs() || []);
+  } catch(e) {
+    showToast('Failed to send message', 'err');
+    inp.value = txt;
+  }
+}
+
+// ===================================================
+//  MODALS
+// ===================================================
+function openModal(type) {
+  if (type === 'channel') {
+    document.getElementById('ch-name-in').value = '';
+    document.getElementById('ch-modal').classList.add('on');
+    setTimeout(() => document.getElementById('ch-name-in').focus(), 80);
+  } else {
+    selectedUser = null;
+    document.getElementById('dm-search').value = '';
+    filterUsers('');
+    document.getElementById('dm-modal').classList.add('on');
+    setTimeout(() => document.getElementById('dm-search').focus(), 80);
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('on');
+}
+
+function setChType(t, el) {
+  newChType = t;
+  document.querySelectorAll('.topt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+async function submitChModal() {
+  const raw = document.getElementById('ch-name-in').value.trim();
+  if (!raw) return showToast('Enter a channel name', 'err');
+  const name = raw.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if (!name) return showToast('Invalid channel name', 'err');
+  try {
+    const [ch] = await dbPost('channels', {
+      name, type: newChType, description: raw, created_by: me.id
     });
-  }catch(e){showToast('Sheets update failed','error');}
-}
-
-async function getRoleFromSheets(userId){
-  if(!SHEETS_WEBAPP_URL||SHEETS_WEBAPP_URL.includes('YOUR_')) return null;
-  try{
-    const r=await fetch(`${SHEETS_WEBAPP_URL}?action=get_role&userId=${userId}`);
-    const d=await r.json();
-    return d.role||null;
-  }catch(e){return null;}
-}
-
-// ================================================================
-// USERS
-// ================================================================
-async function loadUsers(){
-  try{
-    const r=await rpc('get_users',{p_token:session.token});
-    if(Array.isArray(r)) allUsers=r.filter(u=>u.id!==session.user.id);
-  }catch(e){}
-}
-
-// ================================================================
-// SERVERS
-// ================================================================
-async function loadServers(){
-  try{
-    // servers table: id, name, icon_emoji, color, created_by
-    const r=await supaGet('servers','order=created_at.asc');
-    if(Array.isArray(r)) servers=r;
-    renderServerRail();
-  }catch(e){servers=[];}
-}
-
-function renderServerRail(){
-  const icons=document.getElementById('server-icons');
-  icons.innerHTML=servers.map(s=>`
-    <div class="srv-icon${activeServerId===s.id?' active':''}"
-      style="background:${s.color||'#3d4699'}"
-      onclick="selectServer('${s.id}')"
-      title="${escHTML(s.name)}">${escHTML(s.icon_emoji||s.name.slice(0,2).toUpperCase())}</div>
-  `).join('');
-}
-
-function selectServer(sid){
-  activeServerId=sid;
-  // update rail highlight
-  document.getElementById('srv-global').classList.toggle('active',sid==='global');
-  document.querySelectorAll('#server-icons .srv-icon').forEach((el,i)=>{
-    el.classList.toggle('active', servers[i]?.id===sid);
-  });
-
-  if(sid==='global'){
-    document.getElementById('sidebar-title').textContent='Global Chat';
-    renderGlobalSidebar();
-    setActive({type:'global', id:'global', name:'Global Chat', desc:'Everyone on NexusChat', icon:'🌐'});
-  } else {
-    const srv=servers.find(s=>s.id===sid);
-    document.getElementById('sidebar-title').textContent=srv?.name||'Server';
-    loadServerChannels(sid);
+    channels.push(ch);
+    closeModal('ch-modal');
+    goChannel(ch.id, ch.name, ch.description, ch.type);
+    showToast(`#${ch.name} created!`, 'ok');
+  } catch(e) {
+    showToast(e.message || 'Failed to create channel', 'err');
   }
 }
 
-function renderGlobalSidebar(){
-  const scroll=document.getElementById('sidebar-scroll');
-  scroll.innerHTML=`
-    <div class="sidebar-section">
-      <div class="section-label">Chat</div>
-      <div class="ch-item active" onclick="setActive({type:'global',id:'global',name:'Global Chat',desc:'Everyone on NexusChat',icon:'🌐'})">
-        <div class="ch-icon">🌐</div><span class="ch-name">Global Chat</span>
-      </div>
-    </div>
-    <div class="sidebar-section">
-      <div class="section-label">Direct Messages <span class="section-add" onclick="openModal('dm')">+</span></div>
-      <div id="dms-list">${allUsers.map(u=>`
-        <div class="ch-item${activeChat?.id==='dm-'+u.id?' active':''}" onclick="setDMActive('${u.id}','${escAttr(u.username)}','${u.avatar_color}')">
-          <div class="dm-avatar" style="background:${u.avatar_color}">${u.username.slice(0,2).toUpperCase()}
-            ${u.status==='online'?'<div class="online-dot"></div>':''}
+function filterUsers(q) {
+  // Exclude users already in DM list? No — let them re-open existing ones
+  const filtered = q
+    ? allUsers.filter(u => u.username.toLowerCase().includes(q.toLowerCase()))
+    : allUsers;
+
+  document.getElementById('user-list').innerHTML = filtered.length
+    ? filtered.map(u => `
+        <div class="urow${selectedUser?.id===u.id?' sel':''}"
+          onclick="selectUser('${esc(u.id)}','${esc(u.username)}','${esc(u.avatar_color||'#6c7cff')}')">
+          <div class="dm-av" style="background:${u.avatar_color||'#6c7cff'};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff">
+            ${u.username.slice(0,2).toUpperCase()}
           </div>
-          <span class="ch-name">${escHTML(u.username)}</span>
-        </div>`).join('')}
-      </div>
-    </div>`;
+          <span style="flex:1;font-size:13px">${escH(u.username)}</span>
+          ${u.join_number ? `<span style="font-size:11px;color:var(--text-lo)">#${u.join_number}</span>` : ''}
+          ${u.role ? `<span class="role-badge role-${u.role}">${u.role}</span>` : ''}
+        </div>`).join('')
+    : '<div style="color:var(--text-lo);font-size:13px;padding:8px 10px">No users found</div>';
 }
 
-async function loadServerChannels(serverId){
-  try{
-    const r=await supaGet('channels',`server_id=eq.${serverId}&order=created_at.asc`);
-    channels=Array.isArray(r)?r:[];
-    renderServerSidebar(serverId);
-    if(channels.length) setChannelActive(channels[0].id,channels[0].name,channels[0].description||'',channels[0].type);
-  }catch(e){channels=[];renderServerSidebar(serverId);}
+function selectUser(id, username, color) {
+  selectedUser = { id, username, color };
+  filterUsers(document.getElementById('dm-search').value);
 }
 
-function renderServerSidebar(serverId){
-  const scroll=document.getElementById('sidebar-scroll');
-  scroll.innerHTML=`
-    <div class="sidebar-section">
-      <div class="section-label">Channels <span class="section-add" onclick="openModal('channel')">+</span></div>
-      <div id="channels-list">${channels.map(c=>`
-        <div class="ch-item${activeChat?.id===c.id?' active':''}" onclick="setChannelActive('${c.id}','${escAttr(c.name)}','${escAttr(c.description||'')}','${c.type}')">
-          <div class="ch-icon">${c.type==='voice'?'🔊':'#'}</div>
-          <span class="ch-name">${escHTML(c.name)}</span>
-        </div>`).join('')}
-      </div>
+function submitDmModal() {
+  if (!selectedUser) return showToast('Select a user first', 'err');
+  // Add to DM list if not already there
+  if (!myDMs.find(u => u.id === selectedUser.id)) {
+    myDMs.push(selectedUser);
+    localStorage.setItem('nc_dms', JSON.stringify(myDMs));
+  }
+  closeModal('dm-modal');
+  goDM(selectedUser.id, selectedUser.username, selectedUser.color);
+}
+
+// ===================================================
+//  WebRTC VOICE CALLS
+// ===================================================
+async function toggleCall() {
+  if (inCall) endCall();
+  else startCall();
+}
+
+async function startCall() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    document.getElementById('local-audio').srcObject = localStream;
+  } catch(e) {
+    showToast('Microphone access denied — please allow mic access', 'err');
+    return;
+  }
+
+  inCall = true;
+  callId = 'call-' + (
+    active.type === 'dm'
+      ? [me.id, active.userId].sort().join('-')
+      : (active.id || 'global')
+  );
+
+  updateCallBtn();
+  showCallOverlay();
+
+  try {
+    await dbPost('call_signals', {
+      call_id: callId,
+      type: 'call-start',
+      from_user: me.id
+    });
+  } catch(e) {}
+
+  document.getElementById('call-status').textContent = 'Waiting for others to join…';
+  callSecs = 0;
+  callTimer = setInterval(() => {
+    callSecs++;
+    document.getElementById('call-status').textContent = fmtTime(callSecs);
+  }, 1000);
+
+  pollSignals();
+}
+
+async function insertSig(data) {
+  try {
+    await dbPost('call_signals', { call_id: callId, ...data });
+  } catch(e) { console.warn('Signal insert failed:', e.message); }
+}
+
+async function pollSignals() {
+  if (signalPollTimer) clearInterval(signalPollTimer);
+  signalPollTimer = setInterval(async () => {
+    if (!inCall) { clearInterval(signalPollTimer); return; }
+    try {
+      const sigs = await dbGet('call_signals', `?call_id=eq.${callId}&order=created_at.asc&limit=50`);
+      if (!Array.isArray(sigs)) return;
+      for (const s of sigs) {
+        if (s.from_user === me.id) continue;
+        if (s.type === 'call-join') await handlePeerJoin(s.from_user);
+        if (s.type === 'offer' && s.to === me.id) await handleOffer(s);
+        if (s.type === 'answer' && s.to === me.id) await handleAnswer(s);
+        if (s.type === 'ice' && s.to === me.id) await handleIce(s);
+        if (s.type === 'call-end') endCall();
+      }
+    } catch(e) {}
+  }, 1500);
+}
+
+async function handlePeerJoin(pid) {
+  if (!peers[pid]) {
+    addCallAvatar(pid);
+    await createOfferTo(pid);
+  }
+}
+
+async function createOfferTo(pid) {
+  const pc = createPC(pid);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await insertSig({ type:'offer', from_user:me.id, to:pid, sdp:JSON.stringify(offer) });
+}
+
+async function handleOffer(s) {
+  const pc = createPC(s.from_user);
+  await pc.setRemoteDescription(JSON.parse(s.sdp));
+  const ans = await pc.createAnswer();
+  await pc.setLocalDescription(ans);
+  await insertSig({ type:'answer', from_user:me.id, to:s.from_user, sdp:JSON.stringify(ans) });
+}
+
+async function handleAnswer(s) {
+  const pc = peers[s.from_user];
+  if (pc) await pc.setRemoteDescription(JSON.parse(s.sdp));
+}
+
+async function handleIce(s) {
+  const pc = peers[s.from_user];
+  if (pc) try { await pc.addIceCandidate(JSON.parse(s.candidate)); } catch(e) {}
+}
+
+function createPC(pid) {
+  if (peers[pid]) return peers[pid];
+  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  peers[pid] = pc;
+
+  if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  pc.onicecandidate = async (e) => {
+    if (e.candidate) {
+      await insertSig({ type:'ice', from_user:me.id, to:pid, candidate:JSON.stringify(e.candidate) });
+    }
+  };
+
+  pc.ontrack = (e) => {
+    let audio = document.getElementById('ra-' + pid);
+    if (!audio) {
+      audio = document.createElement('audio');
+      audio.id = 'ra-' + pid;
+      audio.autoplay = true;
+      audio.playsinline = true;
+      document.getElementById('remote-audios').appendChild(audio);
+    }
+    audio.srcObject = e.streams[0];
+    addCallAvatar(pid);
+    document.getElementById('call-status').textContent = fmtTime(callSecs);
+  };
+
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') {
+      showToast('Connection to peer failed', 'err');
+    }
+  };
+
+  return pc;
+}
+
+function addCallAvatar(uid) {
+  if (document.getElementById('cav-' + uid)) return;
+  const u = allUsers.find(u => u.id === uid) || { username:'User', avatar_color:'#555' };
+  const wrap = document.createElement('div');
+  wrap.className = 'call-av-wrap';
+  wrap.innerHTML = `
+    <div class="call-av" id="cav-${uid}" style="background:${u.avatar_color}">
+      ${u.username.slice(0,2).toUpperCase()}
+      <div class="mutedbadge">🔇</div>
     </div>
-    <div class="sidebar-section">
-      <div class="section-label">Direct Messages <span class="section-add" onclick="openModal('dm')">+</span></div>
-      <div id="dms-list">${allUsers.map(u=>`
-        <div class="ch-item${activeChat?.id==='dm-'+u.id?' active':''}" onclick="setDMActive('${u.id}','${escAttr(u.username)}','${u.avatar_color}')">
-          <div class="dm-avatar" style="background:${u.avatar_color}">${u.username.slice(0,2).toUpperCase()}</div>
-          <span class="ch-name">${escHTML(u.username)}</span>
-        </div>`).join('')}
+    <div class="call-av-name">${escH(u.username)}</div>`;
+  document.getElementById('call-avs').appendChild(wrap);
+}
+
+function showCallOverlay() {
+  document.getElementById('call-who').textContent = active.name;
+  document.getElementById('call-avs').innerHTML = `
+    <div class="call-av-wrap">
+      <div class="call-av speaking" id="cav-me" style="background:${me.avatar_color}">
+        ${me.username.slice(0,2).toUpperCase()}
+        <div class="mutedbadge">🔇</div>
       </div>
+      <div class="call-av-name">You</div>
     </div>`;
+  document.getElementById('call-overlay').classList.add('on');
 }
 
-// ================================================================
-// NAVIGATION
-// ================================================================
-function setChannelActive(id,name,desc,type){
-  setActive({type:'channel',id,name,desc:desc||'',icon:type==='voice'?'🔊':'#',serverId:activeServerId});
-}
-function setDMActive(userId,username,color){
-  setActive({type:'dm',id:'dm-'+userId,userId,name:username,desc:'Direct message',icon:'💬',color});
-}
-function setActive(chat){
-  activeChat=chat;
-  document.getElementById('header-icon').textContent=chat.icon;
-  document.getElementById('header-name').textContent=chat.name;
-  document.getElementById('header-desc').textContent=chat.desc||'';
-  document.getElementById('msg-input').placeholder=`Message ${chat.type==='channel'?'#':''}${chat.name}`;
-  // re-highlight sidebar
-  document.querySelectorAll('.ch-item').forEach(el=>el.classList.remove('active'));
-  loadMessages();
-}
-
-// ================================================================
-// MESSAGES
-// ================================================================
-async function loadMessages(){
-  document.getElementById('messages-area').innerHTML='<div class="loading">Loading…</div>';
-  try{
-    let result;
-    if(activeChat.type==='global'){
-      result=await rpc('get_global_messages',{p_token:session.token});
-    } else if(activeChat.type==='channel'){
-      result=await rpc('get_channel_messages',{p_token:session.token,p_channel_id:activeChat.id});
-    } else {
-      result=await rpc('get_direct_messages',{p_token:session.token,p_other_user_id:activeChat.userId});
-    }
-    renderMessages(Array.isArray(result)?result:[]);
-  }catch(e){
-    document.getElementById('messages-area').innerHTML='<div class="empty-chat"><div>⚠️ Could not load messages</div></div>';
+async function endCall() {
+  inCall = false;
+  if (callId) {
+    try { await insertSig({ type:'call-end', from_user:me.id }); } catch(e) {}
   }
-}
-
-async function pollMessages(){
-  if(!activeChat||!session) return;
-  try{
-    let result;
-    if(activeChat.type==='global'){
-      result=await rpc('get_global_messages',{p_token:session.token});
-    } else if(activeChat.type==='channel'){
-      result=await rpc('get_channel_messages',{p_token:session.token,p_channel_id:activeChat.id});
-    } else {
-      result=await rpc('get_direct_messages',{p_token:session.token,p_other_user_id:activeChat.userId});
-    }
-    if(Array.isArray(result)) renderMessages(result);
-  }catch(e){}
-  // update last seen in sheets every poll
-  if(session) syncUserToSheets(session.user);
-}
-
-function renderMessages(msgs){
-  const area=document.getElementById('messages-area');
-  if(!msgs.length){
-    area.innerHTML=`<div class="empty-chat"><div style="font-size:40px">💬</div><div>No messages yet — say hello!</div></div>`;
-    return;
+  clearInterval(callTimer);
+  clearInterval(signalPollTimer);
+  Object.values(peers).forEach(pc => pc.close());
+  peers = {};
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
   }
-  const wasAtBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 60;
-  let html='<div style="flex:1"></div><div class="day-divider">Messages</div>';
-  msgs.forEach(m=>{
-    const isMe=m.sender.id===session.user.id;
-    const init=m.sender.username.slice(0,2).toUpperCase();
-    const time=new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const av=`<div class="msg-avatar" style="background:${m.sender.avatar_color}">${init}</div>`;
-    if(isMe){
-      html+=`<div class="msg-own"><div class="msg-group">${av}<div class="msg-content">
-        <div class="msg-header"><span class="msg-name" style="color:var(--accent)">You</span><span class="msg-time">${time}</span></div>
-        <div><span class="msg-text">${escHTML(m.content)}</span></div></div></div></div>`;
-    } else {
-      html+=`<div class="msg-group">${av}<div class="msg-content">
-        <div class="msg-header"><span class="msg-name" style="color:${m.sender.avatar_color}">${escHTML(m.sender.username)}</span><span class="msg-time">${time}</span></div>
-        <div class="msg-text">${escHTML(m.content)}</div></div></div>`;
-    }
-  });
-  area.innerHTML=html;
-  if(wasAtBottom) area.scrollTop=area.scrollHeight;
+  document.getElementById('call-overlay').classList.remove('on');
+  document.getElementById('remote-audios').innerHTML = '';
+  callId = null;
+  updateCallBtn();
+  showToast('Call ended · ' + fmtTime(callSecs));
 }
 
-async function sendMessage(){
-  const input=document.getElementById('msg-input');
-  const text=input.value.trim();
-  if(!text||!session) return;
-  input.value=''; input.style.height='';
-  document.getElementById('send-btn').disabled=true;
-  try{
-    if(activeChat.type==='global'){
-      await rpc('send_global_message',{p_token:session.token,p_content:text});
-    } else if(activeChat.type==='channel'){
-      await rpc('send_channel_message',{p_token:session.token,p_channel_id:activeChat.id,p_content:text});
-    } else {
-      await rpc('send_direct_message',{p_token:session.token,p_receiver_id:activeChat.userId,p_content:text});
-    }
-    await pollMessages();
-  }catch(e){showToast('Failed to send','error');input.value=text;}
+function updateCallBtn() {
+  const b = document.getElementById('call-btn');
+  b.textContent = inCall ? '📵 End call' : '📞 Call';
+  b.className = inCall ? 'call-btn live' : 'call-btn';
 }
 
-// ================================================================
-// MODALS
-// ================================================================
-let selectedUser=null;
-function openModal(type){
-  modalCtx=type; selectedUser=null;
-  const body=document.getElementById('modal-body');
-  const title=document.getElementById('modal-title');
-  const submit=document.getElementById('modal-submit');
-
-  if(type==='server'){
-    title.textContent='Create a server';
-    submit.textContent='Create';
-    body.innerHTML=`
-      <input class="modal-input" id="mi-name" placeholder="Server name" maxlength="40">
-      <input class="modal-input" id="mi-icon" placeholder="Icon emoji (e.g. 🎮)" maxlength="4" style="margin-top:8px">`;
-  } else if(type==='channel'){
-    title.textContent='Create a channel';
-    submit.textContent='Create';
-    body.innerHTML=`
-      <div class="type-select">
-        <div class="type-opt sel" onclick="setChType('text',this)">💬 Text</div>
-        <div class="type-opt" onclick="setChType('voice',this)">🔊 Voice</div>
-      </div>
-      <input class="modal-input" id="mi-name" placeholder="channel-name" maxlength="40" style="margin-top:8px">`;
-  } else if(type==='dm'){
-    title.textContent='Start a direct message';
-    submit.textContent='Open DM';
-    body.innerHTML=`
-      <input class="modal-input" id="mi-search" placeholder="Search users…" oninput="filterUserSearch(this.value)">
-      <div id="user-search-results" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>`;
-    setTimeout(()=>renderUserResults(allUsers),50);
-  }
-
-  document.getElementById('modal').classList.add('active');
-  setTimeout(()=>document.getElementById('modal-box-input')?.focus(),50);
+function toggleMute() {
+  muted = !muted;
+  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = !muted);
+  const b = document.getElementById('mute-btn');
+  b.textContent = muted ? '🔇' : '🎙️';
+  b.classList.toggle('on', muted);
+  const av = document.getElementById('cav-me');
+  if (av) av.classList.toggle('is-muted', muted);
+  showToast(muted ? 'Muted' : 'Unmuted');
 }
 
-let newChType='text';
-function setChType(t,el){newChType=t;document.querySelectorAll('.type-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
-
-function filterUserSearch(q){
-  const f=q?allUsers.filter(u=>u.username.toLowerCase().includes(q.toLowerCase())):allUsers;
-  renderUserResults(f);
-}
-function renderUserResults(users){
-  const el=document.getElementById('user-search-results');
-  if(!el) return;
-  el.innerHTML=users.map(u=>`
-    <div onclick="selectUser('${u.id}','${escAttr(u.username)}','${u.avatar_color}')"
-      style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;
-        border:1px solid ${selectedUser?.id===u.id?'var(--accent)':'var(--border)'};
-        background:${selectedUser?.id===u.id?'var(--accent-soft)':'transparent'};transition:all .12s">
-      <div class="dm-avatar" style="background:${u.avatar_color}">${u.username.slice(0,2).toUpperCase()}</div>
-      <span>${escHTML(u.username)}</span>
-    </div>`).join('')||'<div style="color:var(--text-lo);padding:8px">No users found</div>';
-}
-function selectUser(id,username,color){
-  selectedUser={id,username,color};
-  renderUserResults(allUsers);
+function toggleSpeaker() {
+  speakerOff = !speakerOff;
+  document.querySelectorAll('#remote-audios audio').forEach(a => a.muted = speakerOff);
+  const b = document.getElementById('spk-btn');
+  b.textContent = speakerOff ? '🔇' : '🔊';
+  b.classList.toggle('on', speakerOff);
+  showToast(speakerOff ? 'Speaker off' : 'Speaker on');
 }
 
-function closeModal(){document.getElementById('modal').classList.remove('active');selectedUser=null;}
-
-async function submitModal(){
-  if(modalCtx==='dm'){
-    if(!selectedUser){showToast('Select a user','error');return;}
-    closeModal();
-    setDMActive(selectedUser.id,selectedUser.username,selectedUser.color);
-    return;
-  }
-  if(modalCtx==='server'){
-    const name=(document.getElementById('mi-name')?.value||'').trim();
-    const icon=(document.getElementById('mi-icon')?.value||'').trim();
-    if(!name){showToast('Enter a server name','error');return;}
-    try{
-      const [srv]=await supaPost('servers',{name,icon_emoji:icon||name.slice(0,2).toUpperCase(),color:randomColor(),created_by:session.user.id});
-      servers.push(srv); closeModal(); renderServerRail();
-      selectServer(srv.id);
-      showToast(`${srv.name} created!`,'success');
-    }catch(e){showToast(e.message||'Failed','error');}
-    return;
-  }
-  if(modalCtx==='channel'){
-    const raw=(document.getElementById('mi-name')?.value||'').trim();
-    const name=raw.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-    if(!name){showToast('Enter a channel name','error');return;}
-    if(!activeServerId||activeServerId==='global'){showToast('Select a server first','error');return;}
-    try{
-      const [ch]=await supaPost('channels',{name,type:newChType,description:name,server_id:activeServerId,created_by:session.user.id});
-      channels.push(ch); closeModal();
-      renderServerSidebar(activeServerId);
-      setChannelActive(ch.id,ch.name,ch.description,ch.type);
-      showToast(`#${ch.name} created!`,'success');
-    }catch(e){showToast(e.message||'Failed','error');}
-    return;
-  }
+function toggleMyMic() {
+  if (inCall) toggleMute();
+  else showToast('Mic toggles during an active call');
 }
 
-function randomColor(){
-  const colors=['#3d4699','#1a6b4a','#6b1a1a','#6b5d1a','#1a4f6b','#4a1a6b'];
-  return colors[Math.floor(Math.random()*colors.length)];
+// ===================================================
+//  UTILITIES
+// ===================================================
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 }
 
-// ================================================================
-// FILTER
-// ================================================================
-function filterSidebar(q){
-  q=q.toLowerCase();
-  document.querySelectorAll('.ch-item').forEach(el=>{
-    const n=el.querySelector('.ch-name')?.textContent.toLowerCase()||'';
-    el.style.display=n.includes(q)?'':'none';
-  });
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  document.getElementById('send-btn').disabled = !el.value.trim();
 }
 
-// ================================================================
-// P2P CALLS (PeerJS)
-// ================================================================
-let myPeer=null, localStream=null, screenStream=null;
-let callMap={}, dataConns={};
-let inCall=false, micOn=false, camOn=false, screenSharing=false;
-let callSec=0, callTimerInt=null, pendingCall=null, callRoomId=null;
-
-function myPeerId()         {return 'nexus_'+session.user.id.replace(/-/g,'').slice(0,16);}
-function peerIdForUser(uid) {return 'nexus_'+uid.replace(/-/g,'').slice(0,16);}
-function getUserName(uid)   {const u=allUsers.find(u=>u.id===uid);return u?u.username:uid;}
-function getUserColor(uid)  {const u=allUsers.find(u=>u.id===uid);return u?u.avatar_color:'#6c7cff';}
-function userForPeer(pid)   {return allUsers.find(u=>peerIdForUser(u.id)===pid);}
-
-function renderTile(peerId, displayName, color, stream, muted){
-  let wrap=document.getElementById('tile-'+peerId);
-  if(!wrap){
-    wrap=document.createElement('div');
-    wrap.id='tile-'+peerId; wrap.className='call-video-wrap';
-    const label=document.createElement('div');
-    label.className='vid-label'; label.textContent=displayName;
-    wrap.appendChild(label);
-    document.getElementById('call-videos').appendChild(wrap);
-    updateGridLayout();
-  }
-  const hasVideo=stream&&stream.getVideoTracks().length>0
-    &&stream.getVideoTracks()[0].enabled
-    &&stream.getVideoTracks()[0].readyState!=='ended';
-
-  const oldV=wrap.querySelector('video');
-  const oldA=wrap.querySelector('.call-audio-tile');
-  const oldAudio=wrap.querySelector('audio');
-
-  if(hasVideo){
-    if(oldA) oldA.remove(); if(oldAudio) oldAudio.remove();
-    let v=oldV;
-    if(!v){v=document.createElement('video');v.autoplay=true;v.playsInline=true;wrap.insertBefore(v,wrap.querySelector('.vid-label'));}
-    v.muted=!!muted; v.srcObject=stream;
-  } else {
-    if(oldV) oldV.remove();
-    if(!oldA){
-      const tile=document.createElement('div'); tile.className='call-audio-tile';
-      tile.innerHTML=`<div class="big-av" style="background:${color}">${displayName.slice(0,2).toUpperCase()}</div><div class="av-name">${escHTML(displayName)}</div>`;
-      wrap.insertBefore(tile,wrap.querySelector('.vid-label'));
-    }
-    if(stream&&!muted){
-      let a=oldAudio;
-      if(!a){a=document.createElement('audio');a.autoplay=true;a.style.display='none';wrap.appendChild(a);}
-      a.srcObject=stream;
-    }
-  }
+function escH(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
 }
 
-function updateGridLayout(){
-  const grid=document.getElementById('call-videos');
-  const n=grid.children.length;
-  grid.className='call-videos '+(n<=1?'one':n===2?'two':n<=4?'four':'many');
-}
-function updateParticipantCount(){
-  const n=Object.keys(callMap).length;
-  document.getElementById('call-participants-count').textContent=n===0?'Just you':`${n+1} participants`;
+function esc(s) {
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 }
 
-function initPeer(){
-  if(myPeer) return;
-  myPeer=new Peer(myPeerId(),{host:'0.peerjs.com',secure:true,port:443});
-  myPeer.on('open',id=>console.log('[Peer] ready',id));
-  myPeer.on('error',e=>{if(e.type!=='unavailable-id')console.warn('[Peer]',e);});
-  myPeer.on('call',incoming=>{
-    const meta=incoming.metadata||{};
-    const u=userForPeer(incoming.peer);
-    const name=u?u.username:incoming.peer;
-    const color=u?u.avatar_color:'#6c7cff';
-    if(inCall&&meta.roomId===callRoomId){
-      incoming.answer(localStream);
-      incoming.on('stream',s=>{renderTile(incoming.peer,name,color,s,false);updateParticipantCount();});
-      incoming.on('close',()=>removePeerFromCall(incoming.peer));
-      callMap[incoming.peer]={call:incoming}; return;
-    }
-    if(inCall){incoming.close();return;}
-    pendingCall={call:incoming,name,color,meta};
-    showIncomingCall(name,color);
-  });
-  myPeer.on('connection',conn=>{conn.on('data',d=>handleSignal(d,conn.peer));dataConns[conn.peer]=conn;});
+function fmtTime(s) {
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2,'0')}`;
 }
-function destroyPeer(){if(myPeer){myPeer.destroy();myPeer=null;}}
-
-function sendSignal(peerId,data){
-  if(dataConns[peerId]?.open){dataConns[peerId].send(data);return;}
-  const conn=myPeer.connect(peerId); dataConns[peerId]=conn;
-  conn.on('open',()=>conn.send(data));
-  conn.on('data',d=>handleSignal(d,peerId));
-}
-function handleSignal(data,fromPeer){
-  if(data.type==='call-join'&&inCall&&data.roomId===callRoomId&&localStream) callPeer(fromPeer,data.username||fromPeer);
-  if(data.type==='call-leave') removePeerFromCall(fromPeer);
-}
-
-async function acquireStream(){
-  if(localStream) return;
-  try{localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});}
-  catch(e){localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});}
-  localStream.getAudioTracks().forEach(t=>t.enabled=false);
-  localStream.getVideoTracks().forEach(t=>t.enabled=false);
-  micOn=false; camOn=false;
-}
-
-async function startCall(){
-  if(inCall){showToast('Already in a call');return;}
-  if(!activeChat){showToast('Select a chat first','error');return;}
-  callRoomId=activeChat.id+'_call';
-  try{await acquireStream();}catch(e){showToast('Could not access microphone','error');return;}
-  inCall=true; openCallOverlay();
-  const targets=activeChat.type==='dm'?[activeChat.userId]:allUsers.map(u=>u.id);
-  targets.forEach(uid=>{
-    const pid=peerIdForUser(uid);
-    sendSignal(pid,{type:'call-join',roomId:callRoomId,username:session.user.username});
-    callPeer(pid,getUserName(uid));
-  });
-}
-
-function callPeer(peerId,displayName){
-  if(!myPeer||!localStream||callMap[peerId]) return;
-  const call=myPeer.call(peerId,localStream,{metadata:{roomId:callRoomId,callerName:session.user.username,callerColor:session.user.avatar_color}});
-  if(!call) return;
-  const u=userForPeer(peerId);
-  renderTile(peerId,displayName,u?u.avatar_color:'#6c7cff',null,false);
-  call.on('stream',s=>{renderTile(peerId,displayName,u?u.avatar_color:'#6c7cff',s,false);updateParticipantCount();});
-  call.on('close',()=>removePeerFromCall(peerId));
-  call.on('error',()=>removePeerFromCall(peerId));
-  callMap[peerId]={call};
-}
-
-function showIncomingCall(name,color){
-  document.getElementById('inc-from').textContent=name;
-  const av=document.getElementById('inc-avatar');
-  av.style.background=color; av.textContent=name.slice(0,2).toUpperCase();
-  document.getElementById('incoming-call').classList.add('active');
-}
-async function acceptCall(){
-  document.getElementById('incoming-call').classList.remove('active');
-  if(!pendingCall) return;
-  const{call,name,color,meta}=pendingCall; pendingCall=null;
-  callRoomId=meta.roomId||call.peer+'_call';
-  try{await acquireStream();}catch(e){showToast('Could not access microphone','error');return;}
-  inCall=true; openCallOverlay();
-  call.answer(localStream);
-  renderTile(call.peer,name,color,null,false);
-  call.on('stream',s=>{renderTile(call.peer,name,color,s,false);updateParticipantCount();});
-  call.on('close',()=>removePeerFromCall(call.peer));
-  callMap[call.peer]={call}; updateParticipantCount();
-  sendSignal(call.peer,{type:'call-join',roomId:callRoomId,username:session.user.username});
-}
-function declineCall(){
-  document.getElementById('incoming-call').classList.remove('active');
-  if(pendingCall){pendingCall.call.close();pendingCall=null;}
-  showToast('Call declined');
-}
-
-function openCallOverlay(){
-  document.getElementById('call-overlay').classList.add('active');
-  document.getElementById('call-room-name').textContent=activeChat?.name||'Call';
-  document.getElementById('call-timer').textContent='Connecting…';
-  renderTile('me',session.user.username+' (You)',session.user.avatar_color,localStream,true);
-  updateMicBtn(); updateCamBtn();
-  callSec=0;
-  setTimeout(()=>{
-    document.getElementById('call-timer').textContent='0:00';
-    callTimerInt=setInterval(()=>{
-      callSec++;
-      const m=Math.floor(callSec/60),s=callSec%60;
-      document.getElementById('call-timer').textContent=`${m}:${String(s).padStart(2,'0')}`;
-    },1000);
-  },1000);
-}
-
-function endCall(){
-  Object.keys(callMap).forEach(pid=>{try{callMap[pid].call.close();}catch(e){}sendSignal(pid,{type:'call-leave'});});
-  callMap={};
-  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
-  if(screenStream){screenStream.getTracks().forEach(t=>t.stop());screenStream=null;}
-  inCall=false;screenSharing=false;micOn=false;camOn=false;
-  clearInterval(callTimerInt);
-  document.getElementById('call-overlay').classList.remove('active');
-  document.getElementById('call-videos').innerHTML='';
-  document.getElementById('call-participants-count').textContent='Just you';
-  if(callSec>0){const m=Math.floor(callSec/60),s=callSec%60;showToast(`Call ended · ${m}:${String(s).padStart(2,'0')}`);}
-}
-
-function removePeerFromCall(peerId){
-  try{callMap[peerId]?.call.close();}catch(e){} delete callMap[peerId];
-  document.getElementById('tile-'+peerId)?.remove();
-  updateGridLayout(); updateParticipantCount();
-}
-
-function toggleCallMic(){
-  if(!localStream) return; micOn=!micOn;
-  localStream.getAudioTracks().forEach(t=>t.enabled=micOn); updateMicBtn();
-}
-function updateMicBtn(){
-  const b=document.getElementById('ctrl-mic');
-  b.textContent=micOn?'🎙️':'🔇';
-  b.className='call-ctrl '+(micOn?'active-ctrl':'off-ctrl');
-}
-function toggleCallCam(){
-  if(!localStream) return;
-  const tracks=localStream.getVideoTracks();
-  if(!tracks.length){showToast('No camera found');return;}
-  camOn=!camOn; tracks.forEach(t=>t.enabled=camOn);
-  const myWrap=document.getElementById('tile-me');
-  if(myWrap) myWrap.remove();
-  renderTile('me',session.user.username+' (You)',session.user.avatar_color,localStream,true);
-  updateCamBtn();
-  // tell peers about video state change by re-sending stream
-}
-function updateCamBtn(){
-  const b=document.getElementById('ctrl-cam');
-  b.textContent=camOn?'📷':'🚫📷';
-  b.className='call-ctrl '+(camOn?'active-ctrl':'neutral');
-}
-async function toggleScreenShare(){
-  if(!inCall) return;
-  if(screenSharing){
-    screenStream.getTracks().forEach(t=>t.stop()); screenStream=null; screenSharing=false;
-    document.getElementById('ctrl-screen').className='call-ctrl neutral';
-    showToast('Screen share stopped');
-    const vt=localStream?.getVideoTracks()[0];
-    if(vt) replaceVideoTrack(vt);
-  } else {
-    try{
-      screenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
-      screenSharing=true;
-      document.getElementById('ctrl-screen').className='call-ctrl active-ctrl';
-      showToast('Sharing screen');
-      const st=screenStream.getVideoTracks()[0];
-      replaceVideoTrack(st);
-      st.onended=()=>toggleScreenShare();
-    }catch(e){showToast('Screen share cancelled');}
-  }
-}
-function replaceVideoTrack(newTrack){
-  Object.values(callMap).forEach(({call})=>{
-    const sender=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video');
-    if(sender) sender.replaceTrack(newTrack).catch(()=>{});
-  });
-}
-
-// ================================================================
-// UTILS
-// ================================================================
-function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
-function handleInput(el){
-  el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px';
-  document.getElementById('send-btn').disabled=!el.value.trim();
-}
-function escHTML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function escAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;');}
 
 let toastTimer;
-function showToast(msg,type=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast show'+(type?' '+type:'');
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal.on').forEach(m => m.classList.remove('on'));
+  }
+});
 
-// ================================================================
-// BOOT
-// ================================================================
-if(SUPABASE_URL.includes('YOUR_PROJECT')){
-  document.getElementById('auth-error').textContent='⚠️ Set your SUPABASE_URL and SUPABASE_SERVICE_KEY in the <script> block.';
+// Close modals on backdrop click
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('on'); });
+});
+
+// ===================================================
+//  START
+// ===================================================
+if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR')) {
+  document.getElementById('auth-error').textContent =
+    '⚠️ Set your SUPABASE_URL and SUPABASE_KEY at the top of this file.';
   document.getElementById('auth-error').classList.add('show');
 } else {
   tryAutoLogin();
