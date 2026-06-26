@@ -35,14 +35,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .auth-error{background:#2a1515;border:1px solid var(--red);border-radius:8px;padding:10px 14px;color:#f87171;font-size:13px;display:none}
 .auth-error.show{display:block}
 
-/* APP SHELL */
+/* APP SHELL — server rail + sidebar + main */
 #app{display:none;height:100vh;width:100%}
 .app{display:flex;height:100vh}
 
-/* server rail */
+/* server rail (left-most column, like Discord's) */
 .server-rail{width:64px;min-width:64px;background:#111420;display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:6px;border-right:1px solid var(--border);overflow-y:auto}
 .server-rail::-webkit-scrollbar{width:0}
-.srv-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;transition:border-radius .2s,filter .2s}
+.srv-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;transition:border-radius .2s,filter .2s;position:relative}
 .srv-icon:hover{border-radius:10px;filter:brightness(1.15)}
 .srv-icon.active{border-radius:10px;outline:3px solid var(--accent)}
 .srv-icon.global{background:var(--accent)}
@@ -50,35 +50,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .srv-add{width:44px;height:44px;border-radius:50%;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green);font-size:20px;transition:all .15s;flex-shrink:0}
 .srv-add:hover{border-color:var(--green);border-radius:14px}
 
-/* sidebar — original 260px wide design */
-.sidebar{width:260px;min-width:260px;background:var(--bg-sidebar);display:flex;flex-direction:column;border-right:1px solid var(--border)}
-.sidebar-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.logo{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
-.sidebar-title{font-weight:600;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sidebar-search{padding:12px 14px;border-bottom:1px solid var(--border)}
-.sidebar-search input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text-hi);font-size:13px;outline:none}
+/* sidebar */
+.sidebar{width:240px;min-width:240px;background:var(--bg-sidebar);display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;min-height:52px}
+.sidebar-title{font-weight:700;font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-search{padding:10px 12px;border-bottom:1px solid var(--border)}
+.sidebar-search input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text-hi);font-size:13px;outline:none}
 .sidebar-search input:focus{border-color:var(--accent)}
 .sidebar-search input::placeholder{color:var(--text-lo)}
 .sidebar-scroll{flex:1;overflow-y:auto}
 .sidebar-scroll::-webkit-scrollbar{width:3px}
 .sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.sidebar-section{padding:8px 0}
-.section-label{padding:6px 14px;font-size:11px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;justify-content:space-between}
+.sidebar-section{padding:6px 0}
+.section-label{padding:6px 12px;font-size:11px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;justify-content:space-between}
 .section-add{cursor:pointer;font-size:17px;line-height:1;transition:color .15s}
 .section-add:hover{color:var(--accent)}
-/* keep both class names working */
-.channel-item,.ch-item{padding:7px 14px;cursor:pointer;border-radius:7px;margin:1px 8px;display:flex;align-items:center;gap:9px;transition:background .12s}
-.channel-item:hover,.ch-item:hover{background:var(--bg-hover)}
-.channel-item.active,.ch-item.active{background:var(--accent-soft)}
-.channel-item.active .ch-name,.ch-item.active .ch-name{color:var(--text-hi)}
-.ch-icon{font-size:15px;color:var(--text-lo);width:18px;text-align:center;flex-shrink:0}
-.channel-item.active .ch-icon,.ch-item.active .ch-icon{color:#aab3ff}
-.ch-name{color:var(--text-md);font-size:13.5px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dm-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;position:relative;color:#fff}
+.ch-item{padding:6px 12px;cursor:pointer;border-radius:7px;margin:1px 6px;display:flex;align-items:center;gap:8px;transition:background .12s}
+.ch-item:hover{background:var(--bg-hover)}
+.ch-item.active{background:var(--accent-soft)}
+.ch-item.active .ch-name{color:var(--text-hi)}
+.ch-icon{font-size:15px;color:var(--text-lo);width:16px;text-align:center;flex-shrink:0}
+.ch-item.active .ch-icon{color:#aab3ff}
+.ch-name{color:var(--text-md);font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dm-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;position:relative;color:#fff}
 .online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);position:absolute;bottom:0;right:0;border:2px solid var(--bg-sidebar)}
-.sidebar-bottom{padding:12px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.my-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;position:relative;color:#fff}
-.my-status{width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg-sidebar);position:absolute;bottom:0;right:0}
+.sidebar-bottom{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.my-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0;position:relative;color:#fff}
+.my-status{width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--bg-sidebar);position:absolute;bottom:0;right:0}
 .my-info{flex:1;overflow:hidden}
 .my-name{font-size:13px;font-weight:600}
 .my-tag{font-size:11px;color:var(--text-lo)}
@@ -86,16 +84,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .role-C{background:#1a0a3a;color:var(--purple);border:1px solid var(--purple)}
 .role-A{background:#1a1000;color:var(--gold);border:1px solid var(--gold)}
 .role-M{background:#0a1f0a;color:var(--green);border:1px solid var(--green)}
-.icon-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-lo);transition:background .12s,color .12s;border:none;background:transparent;font-size:15px}
+.icon-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-lo);transition:background .12s,color .12s;border:none;background:transparent;font-size:14px}
 .icon-btn:hover{background:var(--bg-hover);color:var(--text-hi)}
 
 /* main */
 .main{flex:1;display:flex;flex-direction:column;background:var(--bg-main);min-width:0}
 .chat-header{padding:0 20px;height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
 .chat-header-icon{font-size:18px;color:var(--text-lo)}
-.chat-header-name{font-weight:600;font-size:15px;flex:1}
+.chat-header-name{font-weight:600;font-size:15px}
 .chat-header-desc{font-size:12px;color:var(--text-lo)}
-.header-actions{display:flex;gap:4px}
+.header-actions{display:flex;gap:4px;margin-left:auto}
 .call-btn{display:flex;align-items:center;gap:6px;background:var(--accent-soft);border:none;color:#aab3ff;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
 .call-btn:hover{background:var(--accent);color:#fff}
 
