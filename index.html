@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NexusChat</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .auth-logo{display:flex;align-items:center;gap:12px;justify-content:center}
 .auth-logo-icon{width:44px;height:44px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
 .auth-logo-name{font-size:22px;font-weight:700;color:var(--text-hi)}
-.auth-tabs{display:flex;border-bottom:1px solid var(--border);gap:0}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border)}
 .auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;color:var(--text-lo);font-size:14px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
 .auth-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .auth-field{display:flex;flex-direction:column;gap:6px}
@@ -78,8 +79,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chat-header-name{font-weight:600;font-size:15px;flex:1}
 .chat-header-desc{font-size:12px;color:var(--text-lo)}
 .header-actions{display:flex;gap:4px}
-.call-btn{display:flex;align-items:center;gap:6px;background:var(--accent-soft);border:none;color:#aab3ff;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
-.call-btn:hover{background:var(--accent)}
+.call-btn{display:flex;align-items:center;gap:6px;border:none;border-radius:7px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s}
+.call-btn.audio{background:var(--accent-soft);color:#aab3ff}
+.call-btn.audio:hover{background:var(--accent);color:#fff}
+.call-btn.video{background:#1e3a2a;color:#3dd68c}
+.call-btn.video:hover{background:#2a5038;color:#6ee7b7}
 
 .messages-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:2px}
 .messages-area::-webkit-scrollbar{width:4px}
@@ -114,19 +118,102 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .send-btn:disabled{opacity:.35;cursor:not-allowed}
 
 /* ===== CALL OVERLAY ===== */
-.call-overlay{position:fixed;inset:0;background:rgba(10,11,18,.96);z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.call-overlay{
+  position:fixed;inset:0;background:rgba(8,10,18,.97);z-index:100;
+  display:none;flex-direction:column;
+}
 .call-overlay.active{display:flex}
-.call-title{font-size:14px;color:var(--text-md)}
-.call-name{font-size:28px;font-weight:700}
-.call-status{font-size:13px;color:var(--text-lo)}
-.call-avatars{display:flex;gap:16px}
-.call-avatar{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;border:3px solid transparent}
-.call-avatar.speaking{border-color:var(--green);box-shadow:0 0 0 3px rgba(61,214,140,.2)}
-.call-controls{display:flex;gap:14px;margin-top:8px}
-.call-ctrl{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:opacity .15s}
-.call-ctrl:hover{opacity:.8}
-.call-ctrl.mute{background:#2a2d42;color:var(--text-hi)}
-.call-ctrl.end{background:var(--red);color:#fff}
+
+/* top bar */
+.call-topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:rgba(0,0,0,.3);flex-shrink:0;
+}
+.call-topbar-left{display:flex;flex-direction:column;gap:2px}
+.call-room-label{font-size:12px;color:var(--text-lo);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.call-room-name{font-size:18px;font-weight:700;color:var(--text-hi)}
+.call-timer{font-size:13px;color:var(--green);font-weight:500}
+
+/* video grid */
+.call-videos{
+  flex:1;display:grid;gap:10px;padding:14px;overflow:hidden;
+  align-items:center;justify-items:center;
+}
+.call-videos.one   {grid-template-columns:1fr}
+.call-videos.two   {grid-template-columns:1fr 1fr}
+.call-videos.three {grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.call-videos.four  {grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
+.call-videos.many  {grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+
+.call-video-wrap{
+  position:relative;width:100%;height:100%;
+  border-radius:14px;overflow:hidden;background:#0b0d14;
+  border:2px solid transparent;transition:border-color .3s;
+  max-height:100%;
+}
+.call-video-wrap.speaking{border-color:var(--green)}
+.call-video-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.call-video-wrap .vid-label{
+  position:absolute;bottom:10px;left:12px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+  border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;color:#fff;
+}
+.call-video-wrap .vid-muted{
+  position:absolute;top:10px;right:10px;
+  background:rgba(240,82,82,.85);border-radius:50%;
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+}
+/* audio-only avatar tile */
+.call-audio-tile{
+  width:100%;height:100%;border-radius:14px;
+  background:var(--bg-sidebar);border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  transition:border-color .3s;
+}
+.call-audio-tile.speaking{border-color:var(--green);box-shadow:0 0 0 4px rgba(61,214,140,.15)}
+.call-audio-tile .big-av{
+  width:72px;height:72px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;color:#fff;
+}
+.call-audio-tile .av-name{font-size:14px;font-weight:600;color:var(--text-hi)}
+
+/* controls bar */
+.call-controls{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:16px 20px;background:rgba(0,0,0,.3);flex-shrink:0;
+}
+.call-ctrl{
+  width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:opacity .15s,transform .1s;
+}
+.call-ctrl:hover{opacity:.85;transform:scale(1.07)}
+.call-ctrl:active{transform:scale(.95)}
+.call-ctrl.neutral{background:#252840;color:var(--text-hi)}
+.call-ctrl.active-ctrl{background:var(--accent);color:#fff}
+.call-ctrl.danger{background:var(--red);color:#fff}
+.call-ctrl.off-ctrl{background:#3a1c1c;color:var(--red)}
+
+/* incoming call */
+.incoming-call{
+  position:fixed;bottom:24px;right:24px;
+  background:#1a1d27;border:1px solid var(--accent);border-radius:16px;
+  padding:18px 20px;width:300px;z-index:300;
+  display:none;flex-direction:column;gap:14px;
+  box-shadow:0 8px 32px rgba(108,124,255,.25);
+}
+.incoming-call.active{display:flex}
+.incoming-call-info{display:flex;align-items:center;gap:12px}
+.incoming-call-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.incoming-call-text{flex:1}
+.incoming-call-from{font-weight:600;font-size:15px}
+.incoming-call-sub{font-size:12px;color:var(--text-lo)}
+.incoming-call-btns{display:flex;gap:10px}
+.ic-btn{flex:1;padding:10px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600}
+.ic-btn.accept{background:var(--green);color:#0a1a10}
+.ic-btn.decline{background:var(--red);color:#fff}
 
 /* ===== MODAL ===== */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
@@ -156,11 +243,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <!-- ===== CONFIGURE SUPABASE HERE ===== -->
 <script>
-// 🔧 REPLACE THESE WITH YOUR SUPABASE PROJECT VALUES
-// Find them at: supabase.com > your project > Settings > API
 const SUPABASE_URL = 'https://spulajtpzpwmdoixjsmo.supabase.co';
 const SUPABASE_SERVICE_KEY = 'sb_publishable_nNxlpUfS4y_0KgbJS-U9PA_ZzTQA9xk'; // Settings > API > service_role (secret)
-const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
+const POLL_INTERVAL = 3000;
 </script>
 
 <!-- AUTH SCREEN -->
@@ -222,7 +307,6 @@ const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
         <div class="my-name" id="my-username">…</div>
         <div class="my-tag">Online</div>
       </div>
-      <button class="icon-btn" title="Mute">🎙️</button>
       <button class="icon-btn" title="Settings" onclick="showToast('Settings coming soon!')">⚙️</button>
     </div>
   </div>
@@ -234,10 +318,11 @@ const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
         <div class="chat-header-name" id="header-name">general</div>
         <div class="chat-header-desc" id="header-desc"></div>
       </div>
-      <div class="header-actions">
+      <div class="header-actions" id="header-actions">
         <button class="icon-btn" onclick="showToast('Search coming soon!')">🔍</button>
         <button class="icon-btn" onclick="showToast('Members list coming soon!')">👥</button>
-        <button class="call-btn" onclick="startCall()">📞 Call</button>
+        <button class="call-btn audio" onclick="startCall('audio')">📞 Call</button>
+        <button class="call-btn video" onclick="startCall('video')">📷 Video</button>
       </div>
     </div>
     <div class="messages-area" id="messages-area">
@@ -259,16 +344,41 @@ const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
   </div>
 </div>
 
-<!-- CALL OVERLAY -->
+<!-- ===== CALL OVERLAY ===== -->
 <div class="call-overlay" id="call-overlay">
-  <div class="call-title">Voice call</div>
-  <div class="call-name" id="call-room-name"></div>
-  <div class="call-status" id="call-timer">Calling…</div>
-  <div class="call-avatars" id="call-avatars"></div>
+  <div class="call-topbar">
+    <div class="call-topbar-left">
+      <div class="call-room-label">Voice · <span id="call-type-label">Audio</span></div>
+      <div class="call-room-name" id="call-room-name"></div>
+      <div class="call-timer" id="call-timer">Connecting…</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:12px;color:var(--text-lo)" id="call-participants-count">Just you</div>
+    </div>
+  </div>
+
+  <div class="call-videos" id="call-videos"></div>
+
   <div class="call-controls">
-    <button class="call-ctrl mute" id="mute-btn" onclick="toggleMute()">🎙️</button>
-    <button class="call-ctrl mute" onclick="showToast('Video coming soon!')">📷</button>
-    <button class="call-ctrl end" onclick="endCall()">📵</button>
+    <button class="call-ctrl neutral" id="ctrl-mic" onclick="toggleCallMic()" title="Toggle microphone">🎙️</button>
+    <button class="call-ctrl neutral" id="ctrl-cam" onclick="toggleCallCam()" title="Toggle camera">📷</button>
+    <button class="call-ctrl neutral" id="ctrl-screen" onclick="toggleScreenShare()" title="Share screen">🖥️</button>
+    <button class="call-ctrl danger"  id="ctrl-end"  onclick="endCall()"        title="End call">📵</button>
+  </div>
+</div>
+
+<!-- ===== INCOMING CALL ===== -->
+<div class="incoming-call" id="incoming-call">
+  <div class="incoming-call-info">
+    <div class="incoming-call-av" id="inc-avatar"></div>
+    <div class="incoming-call-text">
+      <div class="incoming-call-from" id="inc-from">Someone</div>
+      <div class="incoming-call-sub" id="inc-sub">Incoming call…</div>
+    </div>
+  </div>
+  <div class="incoming-call-btns">
+    <button class="ic-btn accept" onclick="acceptCall()">✓ Accept</button>
+    <button class="ic-btn decline" onclick="declineCall()">✕ Decline</button>
   </div>
 </div>
 
@@ -281,7 +391,7 @@ const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
       <div class="type-opt" onclick="setChType('voice',this)">🔊 Voice</div>
     </div>
     <input class="modal-input" id="modal-input" placeholder="channel-name" maxlength="40">
-    <div id="user-search-results" style="display:none;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+    <div id="user-search-results" style="display:none;max-height:200px;overflow-y:auto;flex-direction:column;gap:4px"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn-primary" id="modal-submit" onclick="submitModal()">Create</button>
@@ -295,14 +405,11 @@ const POLL_INTERVAL = 3000; // check for new messages every 3 seconds
 
 <script>
 // ===== STATE =====
-let session = null; // { user: {id, username, avatar_color}, token }
-let activeChat = null; // { type: 'channel'|'dm', id, name }
+let session = null;
+let activeChat = null;
 let channels = [];
 let allUsers = [];
-let dmList = []; // users we have DMs with
 let pollTimer = null;
-let lastMsgId = null;
-let callSec = 0, callInt = null, inCall = false, muted = false;
 let modalCtx = 'channel', newChType = 'text';
 
 // ===== SUPABASE API =====
@@ -325,357 +432,789 @@ async function rpc(fn, params = {}) {
 let authMode = 'login';
 function switchTab(mode) {
   authMode = mode;
-  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (mode === 'login')));
-  document.getElementById('confirm-field').style.display = mode === 'register' ? 'flex' : 'none';
-  document.getElementById('auth-submit').textContent = mode === 'login' ? 'Sign in' : 'Create account';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active',(i===0)===(mode==='login')));
+  document.getElementById('confirm-field').style.display = mode==='register'?'flex':'none';
+  document.getElementById('auth-submit').textContent = mode==='login'?'Sign in':'Create account';
   hideAuthError();
 }
-function showAuthError(msg) {
-  const el = document.getElementById('auth-error');
-  el.textContent = msg; el.classList.add('show');
-}
-function hideAuthError() { document.getElementById('auth-error').classList.remove('show'); }
+function showAuthError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.classList.add('show')}
+function hideAuthError(){document.getElementById('auth-error').classList.remove('show')}
 
 async function submitAuth() {
   const username = document.getElementById('auth-username').value.trim();
   const password = document.getElementById('auth-password').value;
-  const confirm = document.getElementById('auth-confirm').value;
+  const confirm  = document.getElementById('auth-confirm').value;
   hideAuthError();
-  if (!username || !password) return showAuthError('Please fill in all fields');
-  if (username.length < 3) return showAuthError('Username must be at least 3 characters');
-  if (password.length < 6) return showAuthError('Password must be at least 6 characters');
-  if (authMode === 'register' && password !== confirm) return showAuthError('Passwords do not match');
+  if (!username||!password) return showAuthError('Please fill in all fields');
+  if (username.length<3) return showAuthError('Username must be at least 3 characters');
+  if (password.length<6) return showAuthError('Password must be at least 6 characters');
+  if (authMode==='register'&&password!==confirm) return showAuthError('Passwords do not match');
   const btn = document.getElementById('auth-submit');
-  btn.disabled = true; btn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
+  btn.disabled=true; btn.textContent=authMode==='login'?'Signing in…':'Creating account…';
   try {
-    const fn = authMode === 'login' ? 'login_user' : 'register_user';
-    const result = await rpc(fn, { p_username: username, p_password: password });
-    if (result.error) { showAuthError(result.error); return; }
+    const fn = authMode==='login'?'login_user':'register_user';
+    const result = await rpc(fn,{p_username:username,p_password:password});
+    if (result.error){showAuthError(result.error);return;}
     session = result;
-    localStorage.setItem('nexuschat_token', result.token);
-    localStorage.setItem('nexuschat_user', JSON.stringify(result.user));
+    localStorage.setItem('nexuschat_token',result.token);
+    localStorage.setItem('nexuschat_user',JSON.stringify(result.user));
     await initApp();
   } catch(e) {
     showAuthError('Could not connect. Check your Supabase URL and key.');
-    console.error(e);
   } finally {
-    btn.disabled = false;
-    btn.textContent = authMode === 'login' ? 'Sign in' : 'Create account';
+    btn.disabled=false;
+    btn.textContent=authMode==='login'?'Sign in':'Create account';
   }
 }
 
 async function tryAutoLogin() {
   const token = localStorage.getItem('nexuschat_token');
-  if (!token) return;
+  if(!token) return;
   try {
-    const result = await rpc('validate_session', { p_token: token });
-    if (result.error) { localStorage.clear(); return; }
-    session = { user: result.user, token };
+    const result = await rpc('validate_session',{p_token:token});
+    if(result.error){localStorage.clear();return;}
+    session={user:result.user,token};
     await initApp();
-  } catch(e) { localStorage.clear(); }
+  } catch(e){localStorage.clear();}
 }
 
 function logout() {
+  endCall();
+  destroyPeer();
   localStorage.clear();
-  session = null;
+  session=null;
   clearInterval(pollTimer);
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
 }
 
 // ===== INIT =====
 async function initApp() {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  // Set user info
-  const u = session.user;
-  const initials = u.username.slice(0, 2).toUpperCase();
-  const av = document.getElementById('my-avatar');
-  av.style.background = u.avatar_color;
-  av.textContent = initials;
-  av.innerHTML += '<div class="my-status"></div>';
-  document.getElementById('my-username').textContent = u.username;
-  // Load channels
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  const u=session.user;
+  const initials=u.username.slice(0,2).toUpperCase();
+  const av=document.getElementById('my-avatar');
+  av.style.background=u.avatar_color;
+  av.textContent=initials;
+  av.innerHTML+='<div class="my-status"></div>';
+  document.getElementById('my-username').textContent=u.username;
   await loadChannels();
   await loadUsers();
-  // Set first channel active
-  if (channels.length) setActive({ type: 'channel', id: channels[0].id, name: channels[0].name, desc: channels[0].description, icon: channels[0].type === 'voice' ? '🔊' : '#' });
-  // Start polling
-  pollTimer = setInterval(pollMessages, POLL_INTERVAL);
-  // Keyboard shortcut
-  document.getElementById('auth-username').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
-  document.getElementById('auth-password').addEventListener('keydown', e => { if(e.key==='Enter') submitAuth(); });
+  if(channels.length) setActive({type:'channel',id:channels[0].id,name:channels[0].name,desc:channels[0].description,icon:channels[0].type==='voice'?'🔊':'#'});
+  pollTimer=setInterval(pollMessages,POLL_INTERVAL);
+  // Init peer for signaling
+  initPeer();
 }
 
 async function loadChannels() {
-  // Fetch channels from Supabase directly
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/channels?order=created_at.asc`, {
-    headers: { 'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}` }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/channels?order=created_at.asc`,{
+    headers:{'apikey':SUPABASE_SERVICE_KEY,'Authorization':`Bearer ${SUPABASE_SERVICE_KEY}`}
   });
   channels = await res.json();
   renderChannels();
 }
 
 async function loadUsers() {
-  const result = await rpc('get_users', { p_token: session.token });
-  if (Array.isArray(result)) { allUsers = result; renderDMs(); }
+  const result = await rpc('get_users',{p_token:session.token});
+  if(Array.isArray(result)){allUsers=result;renderDMs();}
 }
 
-// ===== RENDER SIDEBAR =====
+// ===== SIDEBAR =====
 function renderChannels() {
-  document.getElementById('channels-list').innerHTML = channels.map(c => `
-    <div class="channel-item${activeChat?.id === c.id ? ' active' : ''}" onclick="setChannelActive('${c.id}','${escAttr(c.name)}','${escAttr(c.description||'')}','${c.type}')">
-      <div class="ch-icon">${c.type === 'voice' ? '🔊' : '#'}</div>
+  document.getElementById('channels-list').innerHTML=channels.map(c=>`
+    <div class="channel-item${activeChat?.id===c.id?' active':''}" onclick="setChannelActive('${c.id}','${escAttr(c.name)}','${escAttr(c.description||'')}','${c.type}')">
+      <div class="ch-icon">${c.type==='voice'?'🔊':'#'}</div>
       <span class="ch-name">${escHTML(c.name)}</span>
     </div>`).join('');
 }
 
 function renderDMs() {
-  // Show all users as potential DMs
-  document.getElementById('dms-list').innerHTML = allUsers.map(u => `
-    <div class="channel-item${activeChat?.id === 'dm-' + u.id ? ' active' : ''}" onclick="setDMActive('${u.id}','${escAttr(u.username)}','${u.avatar_color}')">
+  document.getElementById('dms-list').innerHTML=allUsers.map(u=>`
+    <div class="channel-item${activeChat?.id==='dm-'+u.id?' active':''}" onclick="setDMActive('${u.id}','${escAttr(u.username)}','${u.avatar_color}')">
       <div class="dm-avatar" style="background:${u.avatar_color}">${u.username.slice(0,2).toUpperCase()}
-        ${u.status === 'online' ? '<div class="online-dot"></div>' : ''}
+        ${u.status==='online'?'<div class="online-dot"></div>':''}
       </div>
       <span class="ch-name">${escHTML(u.username)}</span>
     </div>`).join('');
 }
 
-// ===== NAVIGATION =====
-function setChannelActive(id, name, desc, type) {
-  setActive({ type: 'channel', id, name, desc, icon: type === 'voice' ? '🔊' : '#' });
-}
-function setDMActive(userId, username, color) {
-  setActive({ type: 'dm', id: 'dm-' + userId, userId, name: username, icon: '💬', desc: 'Direct message' });
-}
+function setChannelActive(id,name,desc,type){setActive({type:'channel',id,name,desc,icon:type==='voice'?'🔊':'#'});}
+function setDMActive(userId,username,color){setActive({type:'dm',id:'dm-'+userId,userId,name:username,icon:'💬',desc:'Direct message',color});}
 
 function setActive(chat) {
-  activeChat = chat;
-  lastMsgId = null;
-  document.getElementById('header-icon').textContent = chat.icon;
-  document.getElementById('header-name').textContent = chat.name;
-  document.getElementById('header-desc').textContent = chat.desc || '';
-  document.getElementById('msg-input').placeholder = `Message ${chat.type === 'dm' ? chat.name : '#' + chat.name}`;
+  activeChat=chat;
+  document.getElementById('header-icon').textContent=chat.icon;
+  document.getElementById('header-name').textContent=chat.name;
+  document.getElementById('header-desc').textContent=chat.desc||'';
+  document.getElementById('msg-input').placeholder=`Message ${chat.type==='dm'?chat.name:'#'+chat.name}`;
   renderChannels(); renderDMs();
   loadMessages();
 }
 
 // ===== MESSAGES =====
 async function loadMessages() {
-  document.getElementById('messages-area').innerHTML = '<div class="loading">Loading…</div>';
+  document.getElementById('messages-area').innerHTML='<div class="loading">Loading…</div>';
   try {
     let result;
-    if (activeChat.type === 'channel') {
-      // Find channel UUID
-      const ch = channels.find(c => c.id === activeChat.id || c.name === activeChat.name);
-      if (!ch) return;
-      activeChat.id = ch.id;
-      result = await rpc('get_channel_messages', { p_token: session.token, p_channel_id: ch.id });
+    if(activeChat.type==='channel'){
+      const ch=channels.find(c=>c.id===activeChat.id||c.name===activeChat.name);
+      if(!ch) return;
+      activeChat.id=ch.id;
+      result=await rpc('get_channel_messages',{p_token:session.token,p_channel_id:ch.id});
     } else {
-      result = await rpc('get_direct_messages', { p_token: session.token, p_other_user_id: activeChat.userId });
+      result=await rpc('get_direct_messages',{p_token:session.token,p_other_user_id:activeChat.userId});
     }
-    renderMessages(Array.isArray(result) ? result : []);
-  } catch(e) { showToast('Failed to load messages', 'error'); console.error(e); }
+    renderMessages(Array.isArray(result)?result:[]);
+  } catch(e){showToast('Failed to load messages','error');}
 }
 
 function renderMessages(msgs) {
-  const area = document.getElementById('messages-area');
-  if (!msgs.length) {
-    area.innerHTML = `<div class="empty-chat"><div style="font-size:40px">💬</div><div>No messages yet — say hello!</div></div>`;
+  const area=document.getElementById('messages-area');
+  if(!msgs.length){
+    area.innerHTML=`<div class="empty-chat"><div style="font-size:40px">💬</div><div>No messages yet — say hello!</div></div>`;
     return;
   }
-  let html = '<div style="flex:1"></div><div class="day-divider">Messages</div>';
-  msgs.forEach(m => {
-    const isMe = m.sender.id === session.user.id;
-    const initials = m.sender.username.slice(0, 2).toUpperCase();
-    const time = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const av = `<div class="msg-avatar" style="background:${m.sender.avatar_color}">${initials}</div>`;
-    if (isMe) {
-      html += `<div class="msg-own"><div class="msg-group">${av}<div class="msg-content">
+  let html='<div style="flex:1"></div><div class="day-divider">Messages</div>';
+  msgs.forEach(m=>{
+    const isMe=m.sender.id===session.user.id;
+    const initials=m.sender.username.slice(0,2).toUpperCase();
+    const time=new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const av=`<div class="msg-avatar" style="background:${m.sender.avatar_color}">${initials}</div>`;
+    if(isMe){
+      html+=`<div class="msg-own"><div class="msg-group">${av}<div class="msg-content">
         <div class="msg-header"><span class="msg-name" style="color:var(--accent)">You</span><span class="msg-time">${time}</span></div>
         <div><span class="msg-text">${escHTML(m.content)}</span></div></div></div></div>`;
     } else {
-      html += `<div class="msg-group">${av}<div class="msg-content">
+      html+=`<div class="msg-group">${av}<div class="msg-content">
         <div class="msg-header"><span class="msg-name" style="color:${m.sender.avatar_color}">${escHTML(m.sender.username)}</span><span class="msg-time">${time}</span></div>
         <div class="msg-text">${escHTML(m.content)}</div></div></div>`;
     }
   });
-  area.innerHTML = html;
-  area.scrollTop = area.scrollHeight;
+  area.innerHTML=html;
+  area.scrollTop=area.scrollHeight;
 }
 
 async function pollMessages() {
-  if (!activeChat || !session) return;
+  if(!activeChat||!session) return;
   try {
     let result;
-    if (activeChat.type === 'channel') {
-      result = await rpc('get_channel_messages', { p_token: session.token, p_channel_id: activeChat.id });
+    if(activeChat.type==='channel'){
+      result=await rpc('get_channel_messages',{p_token:session.token,p_channel_id:activeChat.id});
     } else {
-      result = await rpc('get_direct_messages', { p_token: session.token, p_other_user_id: activeChat.userId });
+      result=await rpc('get_direct_messages',{p_token:session.token,p_other_user_id:activeChat.userId});
     }
-    if (Array.isArray(result)) renderMessages(result);
-  } catch(e) { /* silent poll fail */ }
+    if(Array.isArray(result)) renderMessages(result);
+    // Poll for call signals too
+    pollCallSignals();
+  } catch(e){}
 }
 
 async function sendMessage() {
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
-  if (!text || !session) return;
-  input.value = ''; input.style.height = '';
-  document.getElementById('send-btn').disabled = true;
+  const input=document.getElementById('msg-input');
+  const text=input.value.trim();
+  if(!text||!session) return;
+  input.value=''; input.style.height='';
+  document.getElementById('send-btn').disabled=true;
   try {
-    if (activeChat.type === 'channel') {
-      await rpc('send_channel_message', { p_token: session.token, p_channel_id: activeChat.id, p_content: text });
+    if(activeChat.type==='channel'){
+      await rpc('send_channel_message',{p_token:session.token,p_channel_id:activeChat.id,p_content:text});
     } else {
-      await rpc('send_direct_message', { p_token: session.token, p_receiver_id: activeChat.userId, p_content: text });
+      await rpc('send_direct_message',{p_token:session.token,p_receiver_id:activeChat.userId,p_content:text});
     }
     await pollMessages();
-  } catch(e) { showToast('Failed to send message', 'error'); input.value = text; }
+  } catch(e){showToast('Failed to send message','error');input.value=text;}
+}
+
+// =========================================================
+// ===== P2P CALL ENGINE (PeerJS) ==========================
+// =========================================================
+
+let myPeer      = null;   // PeerJS Peer instance
+let localStream = null;   // camera/mic stream
+let screenStream= null;   // screen share stream
+let callMap     = {};     // peerId → { call, wrap, videoEl }
+let dataConns   = {};     // peerId → DataConnection (for signaling)
+let inCall      = false;
+let callMode    = 'audio';// 'audio' | 'video'
+let micOn       = true;
+let camOn       = true;
+let screenSharing = false;
+let callSec     = 0;
+let callTimerInt= null;
+let pendingCall = null;   // incoming call object waiting for accept/decline
+let callRoomId  = null;   // used as a shared "room" for channels; for DM it's the pair
+
+// Derive a stable peer ID for this user from their user ID
+// Format: nexus_{userId_truncated}
+function myPeerId() {
+  return 'nexus_' + session.user.id.replace(/-/g,'').slice(0,16);
+}
+
+// Derive what peer ID the other user would have
+function peerIdForUser(userId) {
+  return 'nexus_' + userId.replace(/-/g,'').slice(0,16);
+}
+
+function initPeer() {
+  if(myPeer) return;
+  const pid = myPeerId();
+  myPeer = new Peer(pid, {host:'0.peerjs.com', secure:true, port:443});
+
+  myPeer.on('open', id => console.log('[Peer] open', id));
+  myPeer.on('error', e => {
+    // If ID taken (reconnect), ignore gracefully
+    if(e.type !== 'unavailable-id') console.warn('[Peer] error', e);
+  });
+
+  // Incoming CALL (audio/video)
+  myPeer.on('call', incomingCall => {
+    const callerId = incomingCall.peer;
+    // Figure out who this is
+    const user = allUsers.find(u => peerIdForUser(u.id) === callerId);
+    const callerName = user ? user.username : callerId;
+    const callerColor = user ? user.avatar_color : '#6c7cff';
+    const meta = incomingCall.metadata || {};
+
+    if(inCall) {
+      // Already in call — if same room, just add them
+      if(meta.roomId === callRoomId) {
+        answerAndAdd(incomingCall, callerName, callerColor);
+      } else {
+        // Different call — decline silently
+        incomingCall.close();
+      }
+      return;
+    }
+
+    // Show incoming call UI
+    pendingCall = { call: incomingCall, callerName, callerColor, meta };
+    showIncomingCall(callerName, callerColor, meta.callMode || 'audio');
+  });
+
+  // Incoming DATA connection (used to send "join call" signals)
+  myPeer.on('connection', conn => {
+    conn.on('data', d => handleSignal(d, conn.peer));
+    dataConns[conn.peer] = conn;
+  });
+}
+
+function destroyPeer() {
+  if(myPeer){ myPeer.destroy(); myPeer=null; }
+}
+
+// Send a data signal to a peer
+function sendSignal(peerId, data) {
+  if(dataConns[peerId] && dataConns[peerId].open) {
+    dataConns[peerId].send(data);
+  } else {
+    const conn = myPeer.connect(peerId);
+    dataConns[peerId] = conn;
+    conn.on('open', () => conn.send(data));
+    conn.on('data', d => handleSignal(d, peerId));
+  }
+}
+
+function handleSignal(data, fromPeer) {
+  if(data.type === 'call-invite') {
+    // Someone is inviting us to a call room — we already handle this via peer.on('call')
+    // but this lets us know it's coming so we can associate metadata
+  }
+  if(data.type === 'call-join') {
+    // Another participant has joined the same call room — call them back
+    if(inCall && data.roomId === callRoomId && localStream) {
+      callPeer(fromPeer, data.username || fromPeer);
+    }
+  }
+  if(data.type === 'call-leave') {
+    removePeerFromCall(fromPeer);
+  }
+}
+
+// ---- Start a call ----
+async function startCall(mode = 'audio') {
+  if(inCall){ showToast('Already in a call'); return; }
+  if(!activeChat){ showToast('Select a chat first','error'); return; }
+
+  callMode = mode;
+  callRoomId = activeChat.id + '_call';
+
+  try {
+    await acquireStream(mode);
+  } catch(e) {
+    showToast('Could not access camera/microphone','error');
+    return;
+  }
+
+  inCall = true;
+  openCallOverlay();
+
+  // Figure out who to call
+  const targets = getCallTargets();
+  if(targets.length === 0) {
+    showToast('No one else here yet — share the link!');
+  }
+
+  targets.forEach(userId => {
+    const peerId = peerIdForUser(userId);
+    // Send data signal so they know a call is starting
+    sendSignal(peerId, {
+      type: 'call-join',
+      roomId: callRoomId,
+      username: session.user.username
+    });
+    callPeer(peerId, getUserName(userId));
+  });
+}
+
+function getCallTargets() {
+  if(activeChat.type === 'dm') {
+    return [activeChat.userId];
+  }
+  // For channels: call everyone in allUsers except self
+  // (In production you'd filter to channel members)
+  return allUsers.map(u => u.id);
+}
+
+function getUserName(userId) {
+  const u = allUsers.find(u => u.id === userId);
+  return u ? u.username : userId;
+}
+
+function getUserColor(userId) {
+  const u = allUsers.find(u => u.id === userId);
+  return u ? u.avatar_color : '#6c7cff';
+}
+
+// Actually call a remote peer
+function callPeer(peerId, displayName) {
+  if(!myPeer || !localStream) return;
+  if(callMap[peerId]) return; // already calling
+
+  const call = myPeer.call(peerId, localStream, {
+    metadata: {
+      roomId: callRoomId,
+      callMode,
+      callerName: session.user.username,
+      callerColor: session.user.avatar_color
+    }
+  });
+
+  if(!call) return;
+  addCallTile(peerId, displayName, getUserColor(allUsers.find(u=>peerIdForUser(u.id)===peerId)?.id||''), null);
+
+  call.on('stream', remoteStream => {
+    updateCallTile(peerId, remoteStream);
+    updateParticipantCount();
+  });
+  call.on('close', () => removePeerFromCall(peerId));
+  call.on('error', () => removePeerFromCall(peerId));
+  callMap[peerId] = { call };
+}
+
+// Answer an incoming call and add their stream
+function answerAndAdd(incomingCall, callerName, callerColor) {
+  incomingCall.answer(localStream);
+  const peerId = incomingCall.peer;
+
+  addCallTile(peerId, callerName, callerColor, null);
+
+  incomingCall.on('stream', remoteStream => {
+    updateCallTile(peerId, remoteStream);
+    updateParticipantCount();
+  });
+  incomingCall.on('close', () => removePeerFromCall(peerId));
+  callMap[peerId] = { call: incomingCall };
+}
+
+// ---- Incoming call UI ----
+function showIncomingCall(name, color, mode) {
+  const el = document.getElementById('incoming-call');
+  document.getElementById('inc-from').textContent = name;
+  document.getElementById('inc-sub').textContent = (mode==='video'?'📷 Video':'📞 Audio') + ' call incoming…';
+  const av = document.getElementById('inc-avatar');
+  av.style.background = color;
+  av.textContent = name.slice(0,2).toUpperCase();
+  el.classList.add('active');
+  // Ring sound could go here
+}
+
+async function acceptCall() {
+  document.getElementById('incoming-call').classList.remove('active');
+  if(!pendingCall) return;
+  const {call, callerName, callerColor, meta} = pendingCall;
+  pendingCall = null;
+  callMode = meta.callMode || 'audio';
+  callRoomId = meta.roomId;
+
+  try {
+    await acquireStream(callMode);
+  } catch(e) {
+    showToast('Could not access camera/microphone','error');
+    return;
+  }
+
+  inCall = true;
+  openCallOverlay();
+  answerAndAdd(call, callerName, callerColor);
+
+  // Tell others in the room we joined
+  sendSignal(call.peer, {
+    type: 'call-join',
+    roomId: callRoomId,
+    username: session.user.username
+  });
+}
+
+function declineCall() {
+  document.getElementById('incoming-call').classList.remove('active');
+  if(pendingCall){ pendingCall.call.close(); pendingCall=null; }
+  showToast('Call declined');
+}
+
+// ---- Stream acquisition ----
+async function acquireStream(mode) {
+  if(localStream) return; // reuse
+  const constraints = mode==='video'
+    ? {video:true, audio:true}
+    : {video:false, audio:true};
+  localStream = await navigator.mediaDevices.getUserMedia(constraints);
+  // Start muted by default on mic
+  if(localStream.getAudioTracks().length) localStream.getAudioTracks()[0].enabled = true;
+  micOn = true;
+  camOn = mode === 'video';
+  addCallTile('me', session.user.username + ' (You)', session.user.avatar_color, localStream, true);
+}
+
+// ---- Call overlay ----
+function openCallOverlay() {
+  const overlay = document.getElementById('call-overlay');
+  overlay.classList.add('active');
+  document.getElementById('call-room-name').textContent = activeChat?.name || 'Call';
+  document.getElementById('call-type-label').textContent = callMode==='video'?'Video':'Audio';
+  document.getElementById('call-timer').textContent = 'Connecting…';
+
+  // Update controls
+  updateMicBtn();
+  updateCamBtn();
+  const camCtrl = document.getElementById('ctrl-cam');
+  camCtrl.style.display = callMode==='video' ? '' : '';
+
+  callSec=0;
+  setTimeout(()=>{
+    document.getElementById('call-timer').textContent='0:00';
+    callTimerInt=setInterval(()=>{
+      callSec++;
+      const m=Math.floor(callSec/60), s=callSec%60;
+      document.getElementById('call-timer').textContent=`${m}:${String(s).padStart(2,'0')}`;
+    },1000);
+  },1000);
+}
+
+function endCall() {
+  // Notify all peers
+  Object.keys(callMap).forEach(peerId=>{
+    try{ callMap[peerId].call.close(); } catch(e){}
+    sendSignal(peerId,{type:'call-leave'});
+  });
+  callMap={};
+
+  // Stop streams
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
+  if(screenStream){ screenStream.getTracks().forEach(t=>t.stop()); screenStream=null; }
+
+  inCall=false; screenSharing=false;
+  clearInterval(callTimerInt);
+
+  document.getElementById('call-overlay').classList.remove('active');
+  document.getElementById('call-videos').innerHTML='';
+  document.getElementById('call-participants-count').textContent='Just you';
+
+  if(callSec>0){
+    const m=Math.floor(callSec/60), s=callSec%60;
+    showToast(`Call ended · ${m}:${String(s).padStart(2,'0')}`);
+  }
+}
+
+function removePeerFromCall(peerId) {
+  if(callMap[peerId]){
+    try{ callMap[peerId].call.close(); } catch(e){}
+    delete callMap[peerId];
+  }
+  const wrap = document.getElementById('tile-'+peerId);
+  if(wrap) wrap.remove();
+  updateGridLayout();
+  updateParticipantCount();
+}
+
+// ---- Video tiles ----
+function addCallTile(peerId, displayName, color, stream, muted=false) {
+  const existing = document.getElementById('tile-'+peerId);
+  if(existing) return;
+
+  const grid = document.getElementById('call-videos');
+  const wrap = document.createElement('div');
+  wrap.id = 'tile-'+peerId;
+  wrap.className = 'call-video-wrap';
+
+  if(stream && (callMode==='video' || peerId==='me')) {
+    const v = document.createElement('video');
+    v.autoplay=true; v.playsInline=true; v.muted=muted;
+    v.srcObject=stream;
+    wrap.appendChild(v);
+  } else {
+    // Audio-only tile
+    const tile = document.createElement('div');
+    tile.className='call-audio-tile';
+    tile.innerHTML=`
+      <div class="big-av" style="background:${color}">${displayName.slice(0,2).toUpperCase()}</div>
+      <div class="av-name">${escHTML(displayName)}</div>`;
+    wrap.appendChild(tile);
+    wrap.classList.add('audio-only');
+  }
+
+  const label = document.createElement('div');
+  label.className='vid-label';
+  label.textContent=displayName;
+  wrap.appendChild(label);
+
+  grid.appendChild(wrap);
+  updateGridLayout();
+}
+
+function updateCallTile(peerId, stream) {
+  const wrap = document.getElementById('tile-'+peerId);
+  if(!wrap) return;
+  let v = wrap.querySelector('video');
+  if(stream && stream.getVideoTracks().length>0 && stream.getVideoTracks()[0].enabled) {
+    // Has video — upgrade from audio tile if needed
+    const audioTile = wrap.querySelector('.call-audio-tile');
+    if(audioTile){ audioTile.remove(); wrap.classList.remove('audio-only'); }
+    if(!v){
+      v=document.createElement('video');
+      v.autoplay=true; v.playsInline=true; v.muted=false;
+      wrap.insertBefore(v, wrap.querySelector('.vid-label'));
+    }
+    v.srcObject=stream;
+  } else {
+    // Audio only
+    if(v) v.remove();
+    if(!wrap.querySelector('.call-audio-tile')){
+      const u=allUsers.find(u=>peerIdForUser(u.id)===peerId);
+      const tile=document.createElement('div');
+      tile.className='call-audio-tile';
+      tile.innerHTML=`
+        <div class="big-av" style="background:${u?u.avatar_color:'#6c7cff'}">${(u?u.username:peerId).slice(0,2).toUpperCase()}</div>
+        <div class="av-name">${escHTML(u?u.username:peerId)}</div>`;
+      wrap.insertBefore(tile, wrap.querySelector('.vid-label'));
+      wrap.classList.add('audio-only');
+    }
+  }
+}
+
+function updateGridLayout() {
+  const grid = document.getElementById('call-videos');
+  const n = grid.children.length;
+  grid.className = 'call-videos ' + (n<=1?'one':n===2?'two':n===3?'three':n===4?'four':'many');
+}
+
+function updateParticipantCount() {
+  const n = Object.keys(callMap).length;
+  document.getElementById('call-participants-count').textContent =
+    n===0 ? 'Just you' : `${n+1} participant${n>0?'s':''}`;
+}
+
+// ---- Call controls ----
+function toggleCallMic() {
+  if(!localStream) return;
+  micOn=!micOn;
+  localStream.getAudioTracks().forEach(t=>t.enabled=micOn);
+  updateMicBtn();
+}
+function updateMicBtn(){
+  const btn=document.getElementById('ctrl-mic');
+  btn.textContent=micOn?'🎙️':'🔇';
+  btn.className='call-ctrl '+(micOn?'neutral':'off-ctrl');
+}
+
+function toggleCallCam() {
+  if(!localStream) return;
+  camOn=!camOn;
+  localStream.getVideoTracks().forEach(t=>t.enabled=camOn);
+  updateCamBtn();
+  // Update own tile
+  const wrap=document.getElementById('tile-me');
+  if(wrap){
+    const v=wrap.querySelector('video');
+    if(v && !camOn){ /* keep element, video tracks disabled */ }
+  }
+}
+function updateCamBtn(){
+  const btn=document.getElementById('ctrl-cam');
+  btn.textContent=camOn?'📷':'📷';
+  btn.className='call-ctrl '+(camOn?'neutral':'off-ctrl');
+}
+
+async function toggleScreenShare() {
+  if(!inCall) return;
+  if(screenSharing){
+    // Stop screen share, revert to camera
+    screenStream.getTracks().forEach(t=>t.stop());
+    screenStream=null;
+    screenSharing=false;
+    document.getElementById('ctrl-screen').className='call-ctrl neutral';
+    showToast('Screen share stopped');
+    // Switch back to camera stream for all peers
+    if(localStream){
+      const videoTrack = localStream.getVideoTracks()[0];
+      if(videoTrack) replaceTrackForAllPeers(videoTrack);
+    }
+  } else {
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      screenSharing=true;
+      document.getElementById('ctrl-screen').className='call-ctrl active-ctrl';
+      showToast('Sharing your screen');
+      const screenTrack = screenStream.getVideoTracks()[0];
+      replaceTrackForAllPeers(screenTrack);
+      screenTrack.onended=()=>toggleScreenShare(); // user stopped via browser UI
+    } catch(e){
+      showToast('Screen share cancelled');
+    }
+  }
+}
+
+function replaceTrackForAllPeers(newTrack) {
+  Object.values(callMap).forEach(({call}) => {
+    if(!call.peerConnection) return;
+    const sender = call.peerConnection.getSenders().find(s=>s.track&&s.track.kind==='video');
+    if(sender) sender.replaceTrack(newTrack).catch(console.warn);
+  });
+  // Also update own tile
+  const myWrap = document.getElementById('tile-me');
+  if(myWrap){
+    const v=myWrap.querySelector('video');
+    if(v && localStream){
+      const ms=new MediaStream([newTrack,...localStream.getAudioTracks()]);
+      v.srcObject=ms;
+    }
+  }
+}
+
+// Poll for call signals via Supabase (as a lightweight fallback / notification channel)
+// In production use Supabase realtime; here we use a simple messages-based approach
+async function pollCallSignals() {
+  // Signals are embedded as system messages with a special prefix
+  // This is already handled via peer.on('connection') in real-time
+  // Nothing extra needed since PeerJS handles signaling via its own server
 }
 
 // ===== MODALS =====
-let userSearch = '';
+let selectedUser=null;
 function openModal(type) {
-  modalCtx = type;
-  document.getElementById('modal-title').textContent = type === 'channel' ? 'Create a channel' : 'Start a direct message';
-  document.getElementById('type-select').style.display = type === 'channel' ? 'flex' : 'none';
-  document.getElementById('modal-input').placeholder = type === 'channel' ? 'channel-name' : 'Search for a user…';
-  document.getElementById('modal-input').value = '';
-  const results = document.getElementById('user-search-results');
-  results.style.display = type === 'dm' ? 'flex' : 'none';
-  results.innerHTML = '';
-  if (type === 'dm') {
-    document.getElementById('modal-input').oninput = (e) => searchUsers(e.target.value);
-    document.getElementById('modal-submit').textContent = 'Open DM';
+  modalCtx=type;
+  document.getElementById('modal-title').textContent=type==='channel'?'Create a channel':'Start a direct message';
+  document.getElementById('type-select').style.display=type==='channel'?'flex':'none';
+  document.getElementById('modal-input').placeholder=type==='channel'?'channel-name':'Search for a user…';
+  document.getElementById('modal-input').value='';
+  const results=document.getElementById('user-search-results');
+  results.style.display=type==='dm'?'flex':'none';
+  results.innerHTML='';
+  if(type==='dm'){
+    document.getElementById('modal-input').oninput=(e)=>searchUsers(e.target.value);
+    document.getElementById('modal-submit').textContent='Open DM';
     renderUserResults(allUsers);
   } else {
-    document.getElementById('modal-input').oninput = null;
-    document.getElementById('modal-submit').textContent = 'Create';
+    document.getElementById('modal-input').oninput=null;
+    document.getElementById('modal-submit').textContent='Create';
   }
   document.getElementById('modal').classList.add('active');
-  setTimeout(() => document.getElementById('modal-input').focus(), 100);
+  setTimeout(()=>document.getElementById('modal-input').focus(),100);
 }
 
 function searchUsers(q) {
-  const filtered = q ? allUsers.filter(u => u.username.toLowerCase().includes(q.toLowerCase())) : allUsers;
+  const filtered=q?allUsers.filter(u=>u.username.toLowerCase().includes(q.toLowerCase())):allUsers;
   renderUserResults(filtered);
 }
 
-let selectedUser = null;
 function renderUserResults(users) {
-  const el = document.getElementById('user-search-results');
-  el.innerHTML = users.map(u => `
+  const el=document.getElementById('user-search-results');
+  el.innerHTML=users.map(u=>`
     <div onclick="selectUser('${u.id}','${escAttr(u.username)}','${u.avatar_color}')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid ${selectedUser?.id===u.id?'var(--accent)':'var(--border)'};background:${selectedUser?.id===u.id?'var(--accent-soft)':'transparent'};transition:all .12s">
       <div class="dm-avatar" style="background:${u.avatar_color};position:relative">${u.username.slice(0,2).toUpperCase()}</div>
       <span style="color:var(--text-hi)">${escHTML(u.username)}</span>
-    </div>`).join('') || '<div style="color:var(--text-lo);font-size:13px;padding:8px">No users found</div>';
+    </div>`).join('')||'<div style="color:var(--text-lo);font-size:13px;padding:8px">No users found</div>';
 }
 
-function selectUser(id, username, color) {
-  selectedUser = { id, username, color };
-  document.getElementById('modal-input').value = username;
+function selectUser(id,username,color){
+  selectedUser={id,username,color};
+  document.getElementById('modal-input').value=username;
   renderUserResults(allUsers);
 }
 
-function closeModal() {
+function closeModal(){
   document.getElementById('modal').classList.remove('active');
-  selectedUser = null;
+  selectedUser=null;
 }
 
 async function submitModal() {
-  if (modalCtx === 'dm') {
-    if (!selectedUser) { showToast('Select a user first', 'error'); return; }
+  if(modalCtx==='dm'){
+    if(!selectedUser){showToast('Select a user first','error');return;}
     closeModal();
-    setDMActive(selectedUser.id, selectedUser.username, selectedUser.color);
+    setDMActive(selectedUser.id,selectedUser.username,selectedUser.color);
     return;
   }
-  const name = document.getElementById('modal-input').value.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  if (!name) { showToast('Enter a channel name', 'error'); return; }
+  const name=document.getElementById('modal-input').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if(!name){showToast('Enter a channel name','error');return;}
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/channels`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', 'Prefer': 'return=representation',
-        'apikey': SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`
-      },
-      body: JSON.stringify({ name, type: newChType, description: name, created_by: session.user.id })
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/channels`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Prefer':'return=representation','apikey':SUPABASE_SERVICE_KEY,'Authorization':`Bearer ${SUPABASE_SERVICE_KEY}`},
+      body:JSON.stringify({name,type:newChType,description:name,created_by:session.user.id})
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
-    const [ch] = await res.json();
+    if(!res.ok){const e=await res.json();throw new Error(e.message);}
+    const [ch]=await res.json();
     channels.push(ch);
-    closeModal();
-    renderChannels();
-    setChannelActive(ch.id, ch.name, ch.description, ch.type);
-    showToast(`#${ch.name} created!`, 'success');
-  } catch(e) { showToast(e.message || 'Failed to create channel', 'error'); }
+    closeModal(); renderChannels();
+    setChannelActive(ch.id,ch.name,ch.description,ch.type);
+    showToast(`#${ch.name} created!`,'success');
+  } catch(e){showToast(e.message||'Failed to create channel','error');}
 }
 
-let chType = 'text';
-function setChType(t, el) { chType = t; newChType = t; document.querySelectorAll('.type-opt').forEach(e => e.classList.remove('sel')); el.classList.add('sel'); }
-
-// ===== CALL =====
-function startCall() {
-  if (inCall) { endCall(); return; }
-  inCall = true;
-  document.getElementById('call-room-name').textContent = activeChat?.name || 'Call';
-  document.getElementById('call-timer').textContent = 'Calling…';
-  document.getElementById('call-overlay').classList.add('active');
-  const u = session.user;
-  document.getElementById('call-avatars').innerHTML =
-    `<div class="call-avatar speaking" style="background:${u.avatar_color}">${u.username.slice(0,2).toUpperCase()}</div>`;
-  callSec = 0;
-  setTimeout(() => {
-    document.getElementById('call-timer').textContent = '0:00';
-    callInt = setInterval(() => {
-      callSec++;
-      const m = Math.floor(callSec / 60), s = callSec % 60;
-      document.getElementById('call-timer').textContent = `${m}:${String(s).padStart(2,'0')}`;
-    }, 1000);
-  }, 1000);
-}
-function endCall() {
-  inCall = false; clearInterval(callInt);
-  document.getElementById('call-overlay').classList.remove('active');
-  showToast('Call ended · ' + document.getElementById('call-timer').textContent);
-}
-function toggleMute() {
-  muted = !muted;
-  document.getElementById('mute-btn').textContent = muted ? '🔇' : '🎙️';
-  document.getElementById('mute-btn').style.background = muted ? 'var(--red)' : '#2a2d42';
-}
+function setChType(t,el){newChType=t;document.querySelectorAll('.type-opt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
 
 // ===== UTILS =====
-function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-function handleInput(el) {
-  el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-  document.getElementById('send-btn').disabled = !el.value.trim();
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function handleInput(el){
+  el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';
+  document.getElementById('send-btn').disabled=!el.value.trim();
 }
-function filterSidebar(q) {
-  q = q.toLowerCase();
-  document.querySelectorAll('.channel-item').forEach(el => {
-    el.style.display = el.querySelector('.ch-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+function filterSidebar(q){
+  q=q.toLowerCase();
+  document.querySelectorAll('.channel-item').forEach(el=>{
+    el.style.display=el.querySelector('.ch-name').textContent.toLowerCase().includes(q)?'':'none';
   });
 }
-function escHTML(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
-function escAttr(s) { return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;') }
+function escHTML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escAttr(s){return String(s).replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 
 let toastTimer;
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (type ? ' ' + type : '');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
 }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeModal(); if (inCall) endCall(); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal();}
 });
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal')) closeModal();
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modal')) closeModal();
 });
 
 // ===== BOOT =====
-if (SUPABASE_URL.includes('YOUR_PROJECT')) {
-  document.getElementById('auth-error').textContent = '⚠️ Please set your SUPABASE_URL and SUPABASE_SERVICE_KEY in the script tag at the top of this file.';
+if(SUPABASE_URL.includes('YOUR_PROJECT')){
+  document.getElementById('auth-error').textContent='⚠️ Please set your SUPABASE_URL and SUPABASE_SERVICE_KEY in the script tag at the top of this file.';
   document.getElementById('auth-error').classList.add('show');
 } else {
   tryAutoLogin();
