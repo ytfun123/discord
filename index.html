@@ -244,10 +244,11 @@ const POLL_MS      = 3000;
     <div class="srv-icon active" id="srv-global" onclick="goGlobal()" title="Global Chat"
       style="background:var(--accent);font-size:20px">🌐</div>
     <div class="srv-divider"></div>
-    <div class="srv-icon" id="srv-main" onclick="goServer()" title="NexusChat Server"
+    <div class="srv-icon" id="srv-main" onclick="goServer()" title="NexusChat (default server)"
       style="background:#252840;color:var(--accent);font-size:14px">NC</div>
+    <div id="custom-server-icons"></div>
     <div style="flex:1"></div>
-    <div class="srv-add" onclick="showToast('More servers coming soon!')" title="Add Server">+</div>
+    <div class="srv-add" onclick="openCreateServerModal()" title="Create your own server">+</div>
   </div>
 
   <!-- SIDEBAR -->
@@ -334,7 +335,26 @@ const POLL_MS      = 3000;
   </div>
 </div>
 
-<!-- CREATE CHANNEL MODAL -->
+<!-- CREATE SERVER MODAL -->
+<div class="modal" id="srv-modal">
+  <div class="mbox">
+    <div class="mtitle">Create your server</div>
+    <div class="msub">Pick an emoji icon and give it a name</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div id="srv-emoji-preview" style="width:52px;height:52px;border-radius:14px;background:#3d4699;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;flex-shrink:0" onclick="cycleSrvEmoji()" title="Click to change emoji">🏠</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <input class="minput" id="srv-name-in" placeholder="My Awesome Server" maxlength="30"
+          onkeydown="if(event.key==='Enter')submitSrvModal()">
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="color-swatches"></div>
+      </div>
+    </div>
+    <div class="msub" style="margin-top:2px">Click the emoji to cycle through options</div>
+    <div class="mactions">
+      <button class="mbtn cancel" onclick="closeModal('srv-modal')">Cancel</button>
+      <button class="mbtn ok" onclick="submitSrvModal()">Create Server</button>
+    </div>
+  </div>
+</div>
 <div class="modal" id="ch-modal">
   <div class="mbox">
     <div class="mtitle">Create a channel</div>
@@ -480,7 +500,8 @@ async function submitAuth(){
     me=res.user; token=res.token;
     localStorage.setItem('nc_token',token);
     localStorage.setItem('nc_user',JSON.stringify(me));
-    await syncToSheet();
+    localStorage.setItem('nc_token_ts',Date.now().toString());
+    syncToSheet();
     await bootApp();
   }catch(e){showAuthErr('Connection failed: '+e.message);console.error(e);}
   finally{btn.disabled=false;btn.textContent=authMode==='login'?'Sign in':'Create account';}
@@ -488,14 +509,37 @@ async function submitAuth(){
 
 async function tryAutoLogin(){
   const t=localStorage.getItem('nc_token');
-  if(!t) return;
+  const savedUser=localStorage.getItem('nc_user');
+  if(!t||!savedUser) return;
+
+  // Show app immediately with cached data so it feels instant
+  me=JSON.parse(savedUser); token=t;
+  await bootApp();
+
+  // Then silently re-validate in the background and refresh user data
   try{
     const r=await rpc('validate_session',{p_token:t});
-    if(r&&r.error){localStorage.clear();return;}
-    me=r.user; token=t;
-    await syncToSheet();
-    await bootApp();
-  }catch(e){localStorage.clear();}
+    if(r&&r.error){
+      // Token expired — go back to login
+      endCall(); destroyPeer();
+      localStorage.clear(); me=null; token=null;
+      clearInterval(pollTimer); clearInterval(syncTimer);
+      document.getElementById('app').style.display='none';
+      document.getElementById('auth-screen').style.display='flex';
+      return;
+    }
+    // Update with fresh user data (role may have changed etc)
+    me=r.user;
+    localStorage.setItem('nc_user',JSON.stringify(me));
+    // Re-render name/badge in case role changed
+    const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
+    document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
+    document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
+    syncToSheet();
+  }catch(e){
+    // Network error — stay logged in with cached data, don't clear
+    console.warn('Background session check failed, staying logged in with cached data');
+  }
 }
 
 function logout(){
@@ -524,6 +568,7 @@ async function bootApp(){
   channels=await dbGet('channels','?order=created_at.asc');
   await loadAllUsers();
   myDMs=JSON.parse(localStorage.getItem('nc_dms')||'[]');
+  loadCustomServers();
 
   goGlobal();
   initPeer();
@@ -640,6 +685,13 @@ async function fetchMsgs(){
   if(!active) return [];
   if(active.type==='global') return rpc('get_global_messages',{p_token:token});
   if(active.type==='channel') return rpc('get_channel_messages',{p_token:token,p_channel_id:active.id});
+  if(active.type==='custom-channel'){
+    // Custom server channels use the same Supabase channel table with a local ID
+    // For now store messages locally in the channel object
+    const srv=customServers.find(s=>s.id===active.serverId);
+    const ch=srv?.channels?.find(c=>c.id===active.id);
+    return ch?.messages||[];
+  }
   return rpc('get_direct_messages',{p_token:token,p_other_user_id:active.userId});
 }
 function roleBadge(role){
@@ -684,41 +736,33 @@ async function sendMsg(){
   try{
     if(active.type==='global') await rpc('send_global_message',{p_token:token,p_content:txt});
     else if(active.type==='channel') await rpc('send_channel_message',{p_token:token,p_channel_id:active.id,p_content:txt});
+    else if(active.type==='custom-channel'){
+      // Store in local custom server channel
+      const srv=customServers.find(s=>s.id===active.serverId);
+      const ch=srv?.channels?.find(c=>c.id===active.id);
+      if(ch){
+        if(!ch.messages) ch.messages=[];
+        ch.messages.push({
+          id:'msg-'+Date.now(),
+          content:txt,
+          created_at:new Date().toISOString(),
+          sender:{id:me.id,username:me.username,avatar_color:me.avatar_color,role:me.role||'',join_number:me.join_number}
+        });
+        // Keep last 200 messages
+        if(ch.messages.length>200) ch.messages=ch.messages.slice(-200);
+        saveCustomServers();
+      }
+    }
     else await rpc('send_direct_message',{p_token:token,p_receiver_id:active.userId,p_content:txt});
     renderMsgs(await fetchMsgs()||[]);
   }catch(e){showToast('Failed to send','error');inp.value=txt;}
 }
 
 // ================================================================
-// MODALS
+// DM MODAL HELPERS
 // ================================================================
-function openModal(type){
-  if(type==='channel'){
-    document.getElementById('ch-name-in').value='';
-    document.getElementById('ch-modal').classList.add('on');
-    setTimeout(()=>document.getElementById('ch-name-in').focus(),80);
-  }else{
-    selectedUser=null;
-    document.getElementById('dm-search').value='';
-    filterUsers('');
-    document.getElementById('dm-modal').classList.add('on');
-    setTimeout(()=>document.getElementById('dm-search').focus(),80);
-  }
-}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
 function setChType(t,el){newChType=t;document.querySelectorAll('.topt').forEach(e=>e.classList.remove('sel'));el.classList.add('sel');}
-async function submitChModal(){
-  const raw=document.getElementById('ch-name-in').value.trim();
-  if(!raw) return showToast('Enter a channel name','error');
-  const name=raw.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
-  if(!name) return showToast('Invalid name','error');
-  try{
-    const [ch]=await dbPost('channels',{name,type:newChType,description:raw,created_by:me.id});
-    channels.push(ch); closeModal('ch-modal');
-    goChannel(ch.id,ch.name,ch.description,ch.type);
-    showToast(`#${ch.name} created!`,'success');
-  }catch(e){showToast(e.message||'Failed','error');}
-}
 function filterUsers(q){
   const filtered=q?allUsers.filter(u=>u.username.toLowerCase().includes(q.toLowerCase())):allUsers;
   document.getElementById('user-list').innerHTML=filtered.length
@@ -910,6 +954,7 @@ function openCallOverlay(){
   document.getElementById('call-timer').textContent='Connecting…';
   renderTile('me',me.username+' (You)',me.avatar_color,localStream,true);
   updateMicBtn(); updateCamBtn();
+  document.getElementById('ctrl-end').style.display='flex';
   callSec=0;
   setTimeout(()=>{
     document.getElementById('call-timer').textContent='0:00';
@@ -1006,8 +1051,191 @@ function sidebarMicToggle(){
 }
 
 // ================================================================
-// UTILS
+// CUSTOM SERVERS
 // ================================================================
+let customServers = []; // [{id, name, emoji, color, channels:[]}]
+let activeServerId = null; // id of currently viewed custom server
+
+const SRV_EMOJIS = ['🏠','🎮','🎵','🎨','📚','💼','🚀','⚽','🍕','🐱','🌴','🔥','💎','🎯','🛸','🏆','🎤','🌊'];
+const SRV_COLORS = ['#3d4699','#1a6b4a','#6b1a1a','#6b5d1a','#1a4f6b','#4a1a6b','#2d6b6b','#6b3d1a','#3d1a6b','#1a6b6b'];
+let srvEmojiIdx = 0, srvColorIdx = 0;
+
+function loadCustomServers(){
+  const saved = localStorage.getItem('nc_servers');
+  if(saved) customServers = JSON.parse(saved);
+  renderServerRail();
+}
+
+function saveCustomServers(){
+  localStorage.setItem('nc_servers',JSON.stringify(customServers));
+}
+
+function renderServerRail(){
+  const el = document.getElementById('custom-server-icons');
+  if(!el) return;
+  el.innerHTML = customServers.map((s,i) => `
+    <div class="srv-icon${activeServerId===s.id?' active':''}"
+      style="background:${s.color};font-size:22px"
+      onclick="goCustomServer('${esc(s.id)}')"
+      title="${escH(s.name)}">${s.emoji}</div>`).join('');
+}
+
+function goCustomServer(id){
+  const srv = customServers.find(s=>s.id===id);
+  if(!srv) return;
+  activeServerId = id;
+  view = 'custom';
+  document.getElementById('srv-global').classList.remove('active');
+  document.getElementById('srv-main').classList.remove('active');
+  document.getElementById('server-title').textContent = srv.emoji+' '+srv.name;
+  renderServerRail();
+  renderCustomServerSidebar(srv);
+  // Go to first channel or show empty
+  if(srv.channels&&srv.channels.length){
+    const ch = srv.channels[0];
+    active = {type:'custom-channel',id:ch.id,name:ch.name,desc:ch.desc||'',icon:ch.type==='voice'?'🔊':'#',serverId:id};
+  } else {
+    active = {type:'custom-channel',id:'none',name:srv.name,desc:'No channels yet — create one!',icon:srv.emoji,serverId:id};
+    document.getElementById('msgs').innerHTML=`<div class="empty-chat"><div style="font-size:36px">${srv.emoji}</div><div style="font-size:15px;font-weight:600">${escH(srv.name)}</div><div style="font-size:13px;color:var(--text-lo)">Create a channel with the + button to get started</div></div>`;
+  }
+  updateHeader();
+  if(active.id!=='none') loadMsgs();
+}
+
+function renderCustomServerSidebar(srv){
+  const el = document.getElementById('sidebar-scroll');
+  const chs = srv.channels||[];
+  const txt = chs.filter(c=>c.type!=='voice').map(c=>`
+    <div class="ch-item${active?.id===c.id?' active':''}"
+      onclick="goCustomChannel('${esc(srv.id)}','${esc(c.id)}','${esc(c.name)}','${esc(c.desc||'')}','${c.type}')">
+      <span class="ch-ico">#</span><span class="ch-name">${escH(c.name)}</span>
+    </div>`).join('');
+  const vc = chs.filter(c=>c.type==='voice').map(c=>`
+    <div class="ch-item${active?.id===c.id?' active':''}"
+      onclick="goCustomChannel('${esc(srv.id)}','${esc(c.id)}','${esc(c.name)}','${esc(c.desc||'')}','${c.type}')">
+      <span class="ch-ico">🔊</span><span class="ch-name">${escH(c.name)}</span>
+    </div>`).join('');
+  el.innerHTML=`
+    <div class="section-label">Text Channels
+      <span class="section-add" onclick="openModal('custom-channel','${esc(srv.id)}')">+</span>
+    </div>
+    ${txt||'<div style="padding:4px 12px;font-size:12px;color:var(--text-lo)">No channels yet</div>'}
+    ${vc?`<div class="section-label" style="margin-top:8px">Voice Channels</div>${vc}`:''}
+    <div class="section-label" style="margin-top:14px">Members</div>
+    <div style="padding:4px 12px;font-size:12px;color:var(--text-lo)">${allUsers.length+1} members</div>`;
+}
+
+function goCustomChannel(serverId, chId, name, desc, type){
+  const srv = customServers.find(s=>s.id===serverId);
+  if(!srv) return;
+  activeServerId = serverId;
+  active = {type:'custom-channel', id:chId, name, desc, icon:type==='voice'?'🔊':'#', serverId};
+  renderCustomServerSidebar(srv);
+  updateHeader();
+  loadMsgs();
+}
+
+// Open modal for creating a channel inside a custom server
+let createChannelServerId = null;
+
+function openModal(type, serverId){
+  if(type==='custom-channel'){
+    createChannelServerId = serverId;
+    document.getElementById('ch-name-in').value='';
+    // Reset type opts
+    document.querySelectorAll('.topt').forEach(e=>e.classList.remove('sel'));
+    document.querySelector('.topt').classList.add('sel');
+    newChType='text';
+    document.getElementById('ch-modal').classList.add('on');
+    setTimeout(()=>document.getElementById('ch-name-in').focus(),80);
+  } else if(type==='channel'){
+    createChannelServerId = null;
+    document.getElementById('ch-name-in').value='';
+    document.querySelectorAll('.topt').forEach(e=>e.classList.remove('sel'));
+    document.querySelector('.topt').classList.add('sel');
+    newChType='text';
+    document.getElementById('ch-modal').classList.add('on');
+    setTimeout(()=>document.getElementById('ch-name-in').focus(),80);
+  } else if(type==='dm'){
+    selectedUser=null;
+    document.getElementById('dm-search').value='';
+    filterUsers('');
+    document.getElementById('dm-modal').classList.add('on');
+    setTimeout(()=>document.getElementById('dm-search').focus(),80);
+  }
+}
+
+async function submitChModal(){
+  const raw=document.getElementById('ch-name-in').value.trim();
+  if(!raw) return showToast('Enter a channel name','error');
+  const name=raw.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  if(!name) return showToast('Invalid name','error');
+
+  if(createChannelServerId){
+    // Add to custom server locally
+    const srv = customServers.find(s=>s.id===createChannelServerId);
+    if(!srv) return;
+    if(!srv.channels) srv.channels=[];
+    const ch = {id:'ch-'+Date.now(),name,type:newChType,desc:name};
+    srv.channels.push(ch);
+    saveCustomServers();
+    closeModal('ch-modal');
+    goCustomChannel(srv.id,ch.id,ch.name,ch.desc,ch.type);
+    showToast(`#${ch.name} created!`,'success');
+  } else {
+    // Default server channel via Supabase
+    try{
+      const [ch]=await dbPost('channels',{name,type:newChType,description:raw,created_by:me.id});
+      channels.push(ch); closeModal('ch-modal');
+      goChannel(ch.id,ch.name,ch.description,ch.type);
+      showToast(`#${ch.name} created!`,'success');
+    }catch(e){showToast(e.message||'Failed','error');}
+  }
+}
+
+// ---- Create Server modal ----
+function openCreateServerModal(){
+  srvEmojiIdx=0; srvColorIdx=0;
+  document.getElementById('srv-emoji-preview').textContent=SRV_EMOJIS[0];
+  document.getElementById('srv-emoji-preview').style.background=SRV_COLORS[0];
+  document.getElementById('srv-name-in').value='';
+  // Render color swatches
+  document.getElementById('color-swatches').innerHTML=SRV_COLORS.map((c,i)=>`
+    <div onclick="setSrvColor(${i})" style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${i===0?'#fff':'transparent'};transition:border .15s" id="swatch-${i}"></div>`).join('');
+  document.getElementById('srv-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('srv-name-in').focus(),80);
+}
+
+function cycleSrvEmoji(){
+  srvEmojiIdx=(srvEmojiIdx+1)%SRV_EMOJIS.length;
+  document.getElementById('srv-emoji-preview').textContent=SRV_EMOJIS[srvEmojiIdx];
+}
+function setSrvColor(idx){
+  srvColorIdx=idx;
+  document.getElementById('srv-emoji-preview').style.background=SRV_COLORS[idx];
+  document.querySelectorAll('#color-swatches div').forEach((el,i)=>el.style.border=`2px solid ${i===idx?'#fff':'transparent'}`);
+}
+
+function submitSrvModal(){
+  const name=document.getElementById('srv-name-in').value.trim();
+  if(!name) return showToast('Give your server a name','error');
+  const srv={
+    id:'srv-'+Date.now(),
+    name,
+    emoji:SRV_EMOJIS[srvEmojiIdx],
+    color:SRV_COLORS[srvColorIdx],
+    channels:[{id:'ch-'+Date.now(),name:'general',type:'text',desc:'General chat'}],
+    createdBy:me.id
+  };
+  customServers.push(srv);
+  saveCustomServers();
+  closeModal('srv-modal');
+  renderServerRail();
+  goCustomServer(srv.id);
+  showToast(`${srv.emoji} ${srv.name} created!`,'success');
+}
+
+
 function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';document.getElementById('send-btn').disabled=!el.value.trim();}
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
