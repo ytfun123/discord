@@ -1023,7 +1023,115 @@ function isAdmin(user){
 }
 function isCreatorUser(user){
   const roles=[user?.role,user?.role2,user?.role3];
-  return roles.includes('C');
+  return roles.includes('C')||!!user?.is_creator;
+}
+
+// ================================================================
+// USER CACHE + RIGHT-CLICK MODERATION MENU
+// ================================================================
+let userCache={};
+function cacheUser(u){
+  if(!u||!u.id) return;
+  userCache[u.id]={
+    id:u.id, username:u.username, avatar_color:u.avatar_color||'#6c7cff',
+    role:u.role||'', role2:u.role2||'', role3:u.role3||'',
+    is_creator:!!u.is_creator||[u.role,u.role2,u.role3].includes('C')
+  };
+}
+function showUserCtx(ev,targetId){
+  const menu=document.getElementById('ctx-menu');
+  if(!targetId||targetId===me.id||!isMod(me)) return; // no self-menu, no menu for non-mods
+  const target=userCache[targetId];
+  if(!target) return;
+  ev.preventDefault();
+  ev.stopPropagation();
+  if(isCreatorUser(target)){
+    menu.classList.remove('show');
+    showToast('Creators cannot be moderated','error');
+    return;
+  }
+  const inServer=active&&active.type==='srv-channel'&&!!activeServerId;
+  let html=`<div class="ctx-item" style="pointer-events:none;font-weight:700;color:var(--text-hi)">${escH(target.username)}</div><div class="ctx-divider"></div>`;
+  html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(targetId)}')">🔇 Mute</div>`;
+  if(inServer){
+    html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(targetId)}')">👢 Kick from server</div>`;
+  }
+  html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(targetId)}')">⛔ Ban</div>`;
+  menu.innerHTML=html;
+  menu.classList.add('show');
+  positionCtxMenu(ev,menu);
+}
+function positionCtxMenu(ev,menu){
+  menu.style.left=ev.clientX+'px';
+  menu.style.top=ev.clientY+'px';
+  requestAnimationFrame(()=>{
+    const r=menu.getBoundingClientRect();
+    if(r.right>window.innerWidth) menu.style.left=Math.max(8,window.innerWidth-r.width-8)+'px';
+    if(r.bottom>window.innerHeight) menu.style.top=Math.max(8,window.innerHeight-r.height-8)+'px';
+  });
+}
+function openMod(type,targetId){
+  const target=userCache[targetId];
+  if(!target) return;
+  document.getElementById('ctx-menu').classList.remove('show');
+  modAction={type,targetId,targetUsername:target.username,targetColor:target.avatar_color};
+  modDuration=5;
+  document.getElementById('mod-title').textContent=type==='mute'?'Mute User':type==='kick'?'Kick User':'Ban User';
+  const avEl=document.getElementById('mod-av');
+  avEl.style.background=target.avatar_color;
+  avEl.textContent=target.username.slice(0,2).toUpperCase();
+  document.getElementById('mod-username-el').textContent=target.username;
+  document.getElementById('mod-action-label').textContent=
+    type==='mute'?'Prevents this user from sending messages for the chosen duration.':
+    type==='kick'?'Removes this user from the server. They can rejoin with an invite.':
+    'Bans this user for the chosen duration (or permanently).';
+  document.getElementById('mod-dur-section').style.display=type==='kick'?'none':'block';
+  document.querySelectorAll('#mod-dur-section .dur-btn').forEach((b,i)=>b.classList.toggle('sel',i===0));
+  document.getElementById('mod-reason').value='';
+  document.getElementById('mod-message').value='';
+  document.getElementById('mod-error').style.display='none';
+  document.getElementById('mod-confirm-btn').textContent=type==='mute'?'Mute':type==='kick'?'Kick':'Ban';
+  document.getElementById('mod-confirm-btn').disabled=false;
+  document.getElementById('mod-modal').classList.add('on');
+}
+function setDur(btn,mins){
+  modDuration=mins;
+  document.querySelectorAll('#mod-dur-section .dur-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+function closeMod(){
+  document.getElementById('mod-modal').classList.remove('on');
+  modAction=null;
+}
+async function submitMod(){
+  if(!modAction) return;
+  const errEl=document.getElementById('mod-error');
+  errEl.style.display='none';
+  const reason=document.getElementById('mod-reason').value.trim();
+  const message=document.getElementById('mod-message').value.trim();
+  const serverId=(active&&active.type==='srv-channel'&&activeServerId)?activeServerId:null;
+  const btn=document.getElementById('mod-confirm-btn');
+  btn.disabled=true;
+  try{
+    let r;
+    if(modAction.type==='mute'){
+      r=await rpc('mod_mute',{p_token:token,p_target_id:modAction.targetId,p_server_id:serverId,p_duration_minutes:modDuration,p_reason:reason,p_message:message});
+    }else if(modAction.type==='kick'){
+      r=await rpc('mod_kick',{p_token:token,p_target_id:modAction.targetId,p_server_id:serverId,p_reason:reason,p_message:message});
+    }else{
+      r=await rpc('mod_ban',{p_token:token,p_target_id:modAction.targetId,p_server_id:serverId,p_duration_minutes:modDuration,p_reason:reason,p_message:message});
+    }
+    if(r&&r.error){errEl.textContent=r.error;errEl.style.display='block';btn.disabled=false;return;}
+    const verb=modAction.type==='mute'?'muted':modAction.type==='kick'?'kicked':'banned';
+    showToast(`${modAction.targetUsername} was ${verb}`,'success');
+    const wasServer=!!serverId;
+    closeMod();
+    if(document.getElementById('members-modal').classList.contains('on')&&wasServer) openMembersModal();
+  }catch(e){
+    errEl.textContent=e.message||'Action failed';
+    errEl.style.display='block';
+    btn.disabled=false;
+  }
 }
 function renderMsgs(msgs){
   const el=document.getElementById('msgs');
@@ -1033,6 +1141,7 @@ function renderMsgs(msgs){
   }
   let h=`<div style="flex:1"></div><div class="day-div">Today</div>`;
   msgs.forEach(m=>{
+    cacheUser(m.sender);
     const isMe=m.sender.id===me.id;
     const ini=m.sender.username.slice(0,2).toUpperCase();
     const t=new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -1045,7 +1154,7 @@ function renderMsgs(msgs){
         <div><span class="msg-txt">${escH(m.content)}</span></div></div></div>`;
     }else{
       h+=`<div class="msg-row">${av}<div class="msg-body">
-        <div class="msg-hdr"><span class="msg-who" style="color:${m.sender.avatar_color}">${escH(m.sender.username)}</span>${num}${badge}<span class="msg-time">${t}</span></div>
+        <div class="msg-hdr"><span class="msg-who" data-uid="${esc(m.sender.id)}" style="color:${m.sender.avatar_color};cursor:pointer">${escH(m.sender.username)}</span>${num}${badge}<span class="msg-time">${t}</span></div>
         <div class="msg-txt">${escH(m.content)}</div></div></div>`;
     }
   });
@@ -1251,9 +1360,10 @@ async function openMembersModal(){
     const r=await rpc('get_server_members',{p_token:token,p_server_id:activeServerId});
     if(r.error){document.getElementById('members-list').innerHTML=`<div style="color:#f87171;padding:10px">${r.error}</div>`;return;}
     const members=Array.isArray(r)?r:[];
+    members.forEach(cacheUser);
     document.getElementById('members-list').innerHTML=members.length
       ?members.map(m=>`
-        <div class="member-row">
+        <div class="member-row" ${m.id!==me.id?`data-uid="${esc(m.id)}" style="cursor:pointer"`:''}>
           <div style="width:32px;height:32px;border-radius:50%;background:${m.avatar_color};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0">${m.username.slice(0,2).toUpperCase()}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px">
@@ -1818,8 +1928,16 @@ function showToast(msg,type=''){
   t.textContent=msg; t.className='toast show'+(type?' '+type:'');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
 }
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.on').forEach(m=>m.classList.remove('on'));closeSettings();}});
+document.addEventListener('contextmenu',e=>{
+  const el=e.target.closest('[data-uid]');
+  if(el) showUserCtx(e,el.getAttribute('data-uid'));
+  else document.getElementById('ctx-menu').classList.remove('show');
+});
+document.addEventListener('click',()=>document.getElementById('ctx-menu').classList.remove('show'));
+document.addEventListener('scroll',()=>document.getElementById('ctx-menu').classList.remove('show'),true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.on').forEach(m=>m.classList.remove('on'));document.getElementById('ctx-menu').classList.remove('show');closeSettings();}});
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('on');}));
+document.getElementById('mod-modal').addEventListener('click',e=>{if(e.target===document.getElementById('mod-modal'))closeMod();});
 document.getElementById('settings-panel').addEventListener('click',e=>{if(e.target===document.getElementById('settings-panel'))closeSettings();});
 
 // ================================================================
