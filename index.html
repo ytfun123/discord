@@ -75,6 +75,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .role-M{background:#0a1f0a;color:var(--green);border:1px solid var(--green)}
 .role-T{background:#0a1a2a;color:#48dbfb;border:1px solid #48dbfb}
 .role-H{background:#1a0a10;color:#ff9ff3;border:1px solid #ff9ff3}
+.role-O{background:#2a1200;color:#ff9f43;border:1px solid #ff9f43}
 .creator-badge{display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:#1a0a3a;color:var(--purple);border:1px solid var(--purple);margin-left:3px;vertical-align:middle}
 .icon-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-lo);border:none;background:transparent;font-size:14px;transition:all .12s;flex-shrink:0}
 .icon-btn:hover{background:var(--bg-hover);color:var(--text-hi)}
@@ -108,6 +109,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .msg-own .msg-txt{background:var(--bg-msg-own);border-radius:12px 3px 12px 12px;padding:7px 11px;display:inline-block;max-width:400px;float:right;clear:both}
 .msg-deleted{color:var(--text-lo);font-style:italic;font-size:13px}
 .msg-pending-delete{opacity:.6;border-left:3px solid var(--gold);padding-left:8px}
+.pending-delete-note{font-size:11px;color:var(--gold);margin-top:4px}
 .msg-reply-preview{background:var(--bg-input);border-left:3px solid var(--accent);border-radius:4px;padding:4px 8px;margin-bottom:4px;font-size:12px;color:var(--text-lo);display:flex;gap:6px;align-items:center}
 .msg-reply-preview .reply-who{color:var(--accent);font-weight:600}
 .msg-vote-btn{font-size:11px;background:var(--gold);color:#000;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:6px;font-weight:600}
@@ -746,7 +748,7 @@ async function tryAutoLogin(){
       return;
     }
     me=r.user; localStorage.setItem('nc_user',JSON.stringify(me));
-    const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
+    const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
     document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
     document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
     syncToSheet();
@@ -770,7 +772,7 @@ async function bootApp(){
   avEl.style.background=me.avatar_color;
   avEl.textContent=me.username.slice(0,2).toUpperCase();
   avEl.innerHTML+=`<div class="my-dot"></div>`;
-  const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
+  const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
   document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
   document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
   channels=await dbGet('channels','?order=created_at.asc');
@@ -1000,7 +1002,14 @@ async function fetchMsgs(){
   }
   return rpc('get_direct_messages',{p_token:token,p_other_user_id:active.userId});
 }
-const ROLE_LABELS={'C':'Creator','A':'Admin','M':'Mod','T':'Tester','H':'Helper'};
+function currentMsgTable(){
+  if(!active) return 'messages';
+  if(active.type==='global') return 'global_messages';
+  if(active.type==='channel') return 'messages';
+  if(active.type==='srv-channel') return 'server_messages';
+  return 'direct_messages';
+}
+const ROLE_LABELS={'C':'Creator','O':'Owner','A':'Admin','M':'Mod','T':'Tester','H':'Helper'};
 function roleBadge(role,isCreator){
   if(isCreator) return `<span class="creator-badge">Creator</span>`;
   if(!role) return '';
@@ -1017,15 +1026,20 @@ function allRoleBadges(sender){
 function isMod(user){
   // Check if user has moderation power
   const roles=[user?.role,user?.role2,user?.role3];
-  return roles.some(r=>['C','A','M'].includes(r));
+  return roles.some(r=>['C','O','A','M'].includes(r));
 }
 function isAdmin(user){
   const roles=[user?.role,user?.role2,user?.role3];
-  return roles.some(r=>['C','A'].includes(r));
+  return roles.some(r=>['C','O','A'].includes(r));
 }
 function isCreatorUser(user){
   const roles=[user?.role,user?.role2,user?.role3];
   return roles.includes('C')||!!user?.is_creator;
+}
+function isOwnerOrCreator(user){
+  // Owner + Creator can instantly delete anyone's message
+  const roles=[user?.role,user?.role2,user?.role3];
+  return roles.includes('C')||roles.includes('O')||!!user?.is_creator;
 }
 
 // ================================================================
@@ -1039,6 +1053,58 @@ function cacheUser(u){
     role:u.role||'', role2:u.role2||'', role3:u.role3||'',
     is_creator:!!u.is_creator||[u.role,u.role2,u.role3].includes('C')
   };
+}
+function showMsgCtx(ev,msgId,senderId){
+  const menu=document.getElementById('ctx-menu');
+  if(!msgId){ menu.classList.remove('show'); return; }
+  const isOwnMsg=senderId===me.id;
+  const target=senderId?userCache[senderId]:null;
+  const canModTarget=!!target&&!isOwnMsg&&isMod(me)&&!isCreatorUser(target);
+  const canInstantDelete=isOwnMsg||isOwnerOrCreator(me);
+  const canVoteDelete=!isOwnMsg&&!canInstantDelete&&isMod(me);
+  if(!canModTarget&&!canInstantDelete&&!canVoteDelete) return; // nothing to offer, allow default menu
+  ev.preventDefault();
+  ev.stopPropagation();
+  let html='';
+  if(target&&!isOwnMsg){
+    html+=`<div class="ctx-item" style="pointer-events:none;font-weight:700;color:var(--text-hi)">${escH(target.username)}</div><div class="ctx-divider"></div>`;
+  }
+  if(canModTarget){
+    html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(senderId)}')">🔇 Mute</div>`;
+    const inServer=active&&active.type==='srv-channel'&&!!activeServerId;
+    if(inServer) html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(senderId)}')">👢 Kick from server</div>`;
+    html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(senderId)}')">⛔ Ban</div>`;
+  }
+  if(canInstantDelete||canVoteDelete){
+    if(canModTarget) html+=`<div class="ctx-divider"></div>`;
+    if(canInstantDelete){
+      html+=`<div class="ctx-item danger" onclick="handleDeleteMsg('${esc(msgId)}')">🗑️ Delete message</div>`;
+    }else{
+      html+=`<div class="ctx-item warn" onclick="handleDeleteMsg('${esc(msgId)}')">🗳️ Request delete (needs 2nd mod)</div>`;
+    }
+  }
+  menu.innerHTML=html;
+  menu.classList.add('show');
+  positionCtxMenu(ev,menu);
+}
+async function handleDeleteMsg(msgId){
+  document.getElementById('ctx-menu').classList.remove('show');
+  const table=currentMsgTable();
+  try{
+    const r=await rpc('request_delete_message',{p_token:token,p_message_id:msgId,p_table:table});
+    if(r&&r.error){showToast(r.error,'error');return;}
+    showToast(r.status==='pending_vote'?'Delete requested — needs a 2nd moderator to confirm':'Message deleted','success');
+    poll();
+  }catch(e){showToast('Failed to delete: '+(e.message||'error'),'error');}
+}
+async function approveDeleteVote(msgId){
+  const table=currentMsgTable();
+  try{
+    const r=await rpc('approve_delete_message',{p_token:token,p_message_id:msgId,p_table:table});
+    if(r&&r.error){showToast(r.error,'error');return;}
+    showToast('Message deleted','success');
+    poll();
+  }catch(e){showToast('Failed: '+(e.message||'error'),'error');}
 }
 function showUserCtx(ev,targetId){
   const menu=document.getElementById('ctx-menu');
@@ -1150,14 +1216,29 @@ function renderMsgs(msgs){
     const av=`<div class="msg-av" style="background:${m.sender.avatar_color}">${ini}</div>`;
     const badge=roleBadge(m.sender.role,m.sender.is_creator);
     const num=m.sender.join_number?`<span class="msg-num">#${m.sender.join_number}</span>`:'';
-    if(isMe){
-      h+=`<div class="msg-row msg-own">${av}<div class="msg-body">
-        <div class="msg-hdr"><span class="msg-who" style="color:var(--accent)">You</span>${badge}<span class="msg-time">${t}</span></div>
-        <div><span class="msg-txt">${escH(m.content)}</span></div></div></div>`;
+    let bodyHtml;
+    if(m.deleted){
+      bodyHtml=`<div class="msg-txt msg-deleted">🚫 Message deleted</div>`;
     }else{
-      h+=`<div class="msg-row">${av}<div class="msg-body">
-        <div class="msg-hdr"><span class="msg-who" data-uid="${esc(m.sender.id)}" style="color:${m.sender.avatar_color};cursor:pointer">${escH(m.sender.username)}</span>${num}${badge}<span class="msg-time">${t}</span></div>
-        <div class="msg-txt">${escH(m.content)}</div></div></div>`;
+      let pend='';
+      if(m.delete_vote){
+        const iVoted=m.delete_vote===me.id;
+        if(iVoted){
+          pend=`<div class="pending-delete-note">⚠️ You requested deletion — waiting for another moderator to confirm</div>`;
+        }else if(isMod(me)){
+          pend=`<div class="pending-delete-note">⚠️ Pending deletion — <span style="cursor:pointer;text-decoration:underline" onclick="approveDeleteVote('${esc(m.id)}')">confirm delete</span></div>`;
+        }
+      }
+      bodyHtml=`<div class="msg-txt">${escH(m.content)}</div>${pend}`;
+    }
+    if(isMe){
+      h+=`<div class="msg-row msg-own" data-msg-id="${esc(m.id)}" data-sender-id="${esc(m.sender.id)}">${av}<div class="msg-body">
+        <div class="msg-hdr"><span class="msg-who" style="color:var(--accent)">You</span>${badge}<span class="msg-time">${t}</span></div>
+        <div>${bodyHtml}</div></div></div>`;
+    }else{
+      h+=`<div class="msg-row" data-msg-id="${esc(m.id)}" data-sender-id="${esc(m.sender.id)}">${av}<div class="msg-body">
+        <div class="msg-hdr"><span class="msg-who" style="color:${m.sender.avatar_color}">${escH(m.sender.username)}</span>${num}${badge}<span class="msg-time">${t}</span></div>
+        ${bodyHtml}</div></div>`;
     }
   });
   el.innerHTML=h;
@@ -1370,7 +1451,7 @@ async function openMembersModal(){
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px">
               ${escH(m.username)}
-              ${m.is_creator?'<span class="creator-badge">Creator</span>':m.role?`<span class="role-badge role-${m.role}">${{C:'Creator',A:'Admin',M:'Mod'}[m.role]||m.role}</span>`:''}
+              ${m.is_creator?'<span class="creator-badge">Creator</span>':m.role?`<span class="role-badge role-${m.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[m.role]||m.role}</span>`:''}
             </div>
             ${m.join_number?`<div style="font-size:10px;color:var(--text-lo)">#${m.join_number}</div>`:''}
           </div>
@@ -1931,6 +2012,11 @@ function showToast(msg,type=''){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
 }
 document.addEventListener('contextmenu',e=>{
+  const msgRow=e.target.closest('.msg-row[data-msg-id]');
+  if(msgRow){
+    showMsgCtx(e,msgRow.getAttribute('data-msg-id'),msgRow.getAttribute('data-sender-id'));
+    return;
+  }
   const el=e.target.closest('[data-uid]');
   if(el) showUserCtx(e,el.getAttribute('data-uid'));
   else document.getElementById('ctx-menu').classList.remove('show');
