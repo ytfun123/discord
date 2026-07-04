@@ -355,7 +355,7 @@ const POLL_MS      = 3000;
     <div class="sidebar-header">
       <span class="server-name" id="server-title"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">public</span><span class="ic-emoji">🌐</span></span> Global</span>
       <div class="sync-dot" id="sync-dot" title="Sheet sync"></div>
-      <button class="icon-btn" onclick="openSheetLink()" title="Google Sheet"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">table_chart</span><span class="ic-emoji">📊</span></span></button>
+      <button class="icon-btn" id="sheet-btn" onclick="openSheetLink()" title="Google Sheet" style="display:none"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">table_chart</span><span class="ic-emoji">📊</span></span></button>
       <button class="icon-btn" onclick="logout()" title="Sign out"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">logout</span><span class="ic-emoji">🚪</span></span></button>
     </div>
     <div class="sidebar-scroll" id="sidebar-scroll"></div>
@@ -887,6 +887,7 @@ async function bootApp(){
   avEl.innerHTML+=`<div class="my-dot"></div>`;
   document.getElementById('my-name-el').innerHTML=escH(me.username)+renderRoleBadges(me);
   document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
+  document.getElementById('sheet-btn').style.display=isOwnerOrCreator(me)?'flex':'none';
   channels=await dbGet('channels','?order=created_at.asc');
   await loadAllUsers();
   myDMs=JSON.parse(localStorage.getItem('nc_dms')||'[]');
@@ -903,6 +904,7 @@ async function bootApp(){
     if(myRoles[me.id]){
       Object.assign(me,myRoles[me.id]);
       document.getElementById('my-name-el').innerHTML=escH(me.username)+renderRoleBadges(me);
+      document.getElementById('sheet-btn').style.display=isOwnerOrCreator(me)?'flex':'none';
     }
   }).catch(()=>{});
   checkMyModStatus(null).then(banStatus=>{
