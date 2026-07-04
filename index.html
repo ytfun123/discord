@@ -1136,6 +1136,7 @@ function isOwnerOrCreator(user){
 // USER CACHE + RIGHT-CLICK MODERATION MENU
 // ================================================================
 let userCache={};
+let locallyDeletedIds=new Set();
 function cacheUser(u){
   if(!u||!u.id) return;
   userCache[u.id]={
@@ -1200,6 +1201,7 @@ async function handleDeleteMsg(msgId){
       showToast('Delete requested — needs a 2nd moderator to confirm','success');
     }else{
       showToast('Message deleted','success');
+      locallyDeletedIds.add(msgId);
       markMsgDeletedInDom(msgId);
     }
     poll();
@@ -1211,6 +1213,7 @@ async function approveDeleteVote(msgId){
     const r=await rpc('approve_delete_message',{p_token:token,p_message_id:msgId,p_table:table});
     if(r&&r.error){showToast(r.error,'error');return;}
     showToast('Message deleted','success');
+    locallyDeletedIds.add(msgId);
     markMsgDeletedInDom(msgId);
     poll();
   }catch(e){showToast('Failed: '+(e.message||'error'),'error');}
@@ -1312,6 +1315,8 @@ async function submitMod(){
 }
 function renderMsgs(msgs){
   const el=document.getElementById('msgs');
+  const wasNearBottom=(el.scrollHeight-el.scrollTop-el.clientHeight)<120;
+  const prevScrollTop=el.scrollTop;
   if(!msgs||!msgs.length){
     el.innerHTML=`<div class="empty-chat"><div style="font-size:34px">💬</div><div>No messages yet — say hello!</div></div>`;
     return;
@@ -1325,8 +1330,9 @@ function renderMsgs(msgs){
     const av=`<div class="msg-av" style="background:${m.sender.avatar_color}">${ini}</div>`;
     const badge=roleBadge(m.sender.role,m.sender.is_creator);
     const num=m.sender.join_number?`<span class="msg-num">#${m.sender.join_number}</span>`:'';
+    const isDeleted=m.deleted||locallyDeletedIds.has(m.id);
     let bodyHtml;
-    if(m.deleted){
+    if(isDeleted){
       bodyHtml=`<div class="msg-txt msg-deleted">🚫 Message deleted</div>`;
     }else{
       let pend='';
@@ -1351,7 +1357,8 @@ function renderMsgs(msgs){
     }
   });
   el.innerHTML=h;
-  el.scrollTop=el.scrollHeight;
+  if(wasNearBottom) el.scrollTop=el.scrollHeight;
+  else el.scrollTop=prevScrollTop;
 }
 async function poll(){
   if(!active||!token) return;
