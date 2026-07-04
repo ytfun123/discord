@@ -324,12 +324,12 @@ const POLL_MS      = 3000;
 <div class="app">
   <!-- SERVER BAR -->
   <div class="server-bar">
-    <div class="srv-icon active" id="srv-global" onclick="goGlobal()" title="Global Chat" style="background:var(--accent)">🌐</div>
+    <div class="srv-icon active" id="srv-global" onclick="goGlobal()" title="Global Chat" style="background:var(--accent)"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">public</span><span class="ic-emoji">🌐</span></span></div>
     <div class="srv-divider"></div>
     <div class="srv-icon" id="srv-main" onclick="goDefaultServer()" title="NexusChat (default channels)" style="background:#252840;color:var(--accent);font-size:14px">NC</div>
     <div id="custom-srv-icons"></div>
     <div style="flex:1"></div>
-    <div class="srv-add" onclick="openJoinModal()" title="Join a server via invite code" style="font-size:16px">🔗</div>
+    <div class="srv-add" onclick="openJoinModal()" title="Join a server via invite code" style="font-size:16px"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">link</span><span class="ic-emoji">🔗</span></span></div>
     <div style="height:6px"></div>
     <div class="srv-add" onclick="openCreateServerModal()" title="Create your own server">+</div>
   </div>
@@ -337,10 +337,10 @@ const POLL_MS      = 3000;
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-header">
-      <span class="server-name" id="server-title">🌐 Global</span>
+      <span class="server-name" id="server-title"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">public</span><span class="ic-emoji">🌐</span></span> Global</span>
       <div class="sync-dot" id="sync-dot" title="Sheet sync"></div>
-      <button class="icon-btn" onclick="openSheetLink()" title="Google Sheet">📊</button>
-      <button class="icon-btn" onclick="logout()" title="Sign out">🚪</button>
+      <button class="icon-btn" onclick="openSheetLink()" title="Google Sheet"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">table_chart</span><span class="ic-emoji">📊</span></span></button>
+      <button class="icon-btn" onclick="logout()" title="Sign out"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">logout</span><span class="ic-emoji">🚪</span></span></button>
     </div>
     <div class="sidebar-scroll" id="sidebar-scroll"></div>
     <div class="sidebar-bottom">
@@ -349,30 +349,30 @@ const POLL_MS      = 3000;
         <div class="my-name" id="my-name-el">…</div>
         <div class="my-tag" id="my-tag-el">Online</div>
       </div>
-      <button class="icon-btn" id="mic-btn" onclick="sidebarMicToggle()" title="Mic">🎙️</button>
-      <button class="icon-btn" onclick="openSettings('account')" title="Settings">⚙️</button>
+      <button class="icon-btn" id="mic-btn" onclick="sidebarMicToggle()" title="Mic"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">mic</span><span class="ic-emoji">🎙️</span></span></button>
+      <button class="icon-btn" onclick="openSettings('account')" title="Settings"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">settings</span><span class="ic-emoji">⚙️</span></span></button>
     </div>
   </div>
 
   <!-- MAIN -->
   <div class="main">
     <div class="chat-header">
-      <span class="hdr-icon" id="hdr-icon">🌐</span>
+      <span class="hdr-icon" id="hdr-icon"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">public</span><span class="ic-emoji">🌐</span></span></span>
       <div class="hdr-info">
         <div class="hdr-name" id="hdr-name">Global Chat</div>
         <div class="hdr-desc" id="hdr-desc">Everyone is here</div>
       </div>
       <div class="hdr-actions">
-        <button class="icon-btn" id="members-btn" onclick="openMembersModal()" title="Members" style="display:none">👥</button>
-        <button class="icon-btn" id="invite-btn" onclick="openInviteModal()" title="Invite people" style="display:none">📨</button>
-        <button class="call-btn" onclick="startCall()">📞 Call</button>
+        <button class="icon-btn" id="members-btn" onclick="openMembersModal()" title="Members" style="display:none"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">group</span><span class="ic-emoji">👥</span></span></button>
+        <button class="icon-btn" id="invite-btn" onclick="openInviteModal()" title="Invite people" style="display:none"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">person_add</span><span class="ic-emoji">📨</span></span></button>
+        <button class="call-btn" onclick="startCall()"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">call</span><span class="ic-emoji">📞</span></span> Call</button>
       </div>
     </div>
     <div class="msgs" id="msgs"><div class="empty-chat"><div style="font-size:28px" class="ic-wrap"><span class="material-symbols-outlined ic-google" style="font-size:28px">chat_bubble</span><span class="ic-emoji">💬</span></div><div>Loading…</div></div></div>
     <div class="reply-bar" id="reply-bar">
-      <span style="font-size:13px;color:var(--text-lo)">↩ Replying to</span>
+      <span style="font-size:13px;color:var(--text-lo)"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">reply</span><span class="ic-emoji">↩</span></span> Replying to</span>
       <span class="reply-bar-preview" id="reply-bar-preview"></span>
-      <button class="reply-cancel" onclick="cancelReply()">✕</button>
+      <button class="reply-cancel" onclick="cancelReply()"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">close</span><span class="ic-emoji">✕</span></span></button>
     </div>
     <div class="input-wrap">
       <div class="mute-banner" id="mute-banner" style="display:none"></div>
@@ -399,10 +399,10 @@ const POLL_MS      = 3000;
   </div>
   <div class="call-videos" id="call-videos"></div>
   <div class="call-controls">
-    <button class="call-ctrl off-ctrl" id="ctrl-mic"    onclick="toggleCallMic()"     title="Mic">🔇</button>
-    <button class="call-ctrl neutral"  id="ctrl-cam"    onclick="toggleCallCam()"     title="Camera">🚫📷</button>
-    <button class="call-ctrl neutral"  id="ctrl-screen" onclick="toggleScreenShare()" title="Screen share">🖥️</button>
-    <button class="call-ctrl danger"   id="ctrl-end"    onclick="endCall()"           title="End call">📵</button>
+    <button class="call-ctrl off-ctrl" id="ctrl-mic"    onclick="toggleCallMic()"     title="Mic"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">mic_off</span><span class="ic-emoji">🔇</span></span></button>
+    <button class="call-ctrl neutral"  id="ctrl-cam"    onclick="toggleCallCam()"     title="Camera"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">videocam_off</span><span class="ic-emoji">🚫📷</span></span></button>
+    <button class="call-ctrl neutral"  id="ctrl-screen" onclick="toggleScreenShare()" title="Screen share"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">screen_share</span><span class="ic-emoji">🖥️</span></span></button>
+    <button class="call-ctrl danger"   id="ctrl-end"    onclick="endCall()"           title="End call"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">call_end</span><span class="ic-emoji">📵</span></span></button>
   </div>
 </div>
 
@@ -410,11 +410,11 @@ const POLL_MS      = 3000;
 <div class="incoming-call" id="incoming-call">
   <div class="incoming-call-info">
     <div class="inc-av" id="inc-av"></div>
-    <div><div class="inc-from" id="inc-from">Someone</div><div class="inc-sub">📞 Incoming call…</div></div>
+    <div><div class="inc-from" id="inc-from">Someone</div><div class="inc-sub"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">call</span><span class="ic-emoji">📞</span></span> Incoming call…</div></div>
   </div>
   <div class="inc-btns">
-    <button class="ic-btn accept" onclick="acceptCall()">✓ Accept</button>
-    <button class="ic-btn decline" onclick="declineCall()">✕ Decline</button>
+    <button class="ic-btn accept" onclick="acceptCall()"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">check</span><span class="ic-emoji">✓</span></span> Accept</button>
+    <button class="ic-btn decline" onclick="declineCall()"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">close</span><span class="ic-emoji">✕</span></span> Decline</button>
   </div>
 </div>
 
@@ -445,8 +445,8 @@ const POLL_MS      = 3000;
   <div class="mbox">
     <div class="mtitle">Create a channel</div>
     <div class="type-row">
-      <div class="topt sel" onclick="setChType('text',this)">💬 Text</div>
-      <div class="topt" onclick="setChType('voice',this)">🔊 Voice</div>
+      <div class="topt sel" onclick="setChType('text',this)"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">chat_bubble</span><span class="ic-emoji">💬</span></span> Text</div>
+      <div class="topt" onclick="setChType('voice',this)"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">volume_up</span><span class="ic-emoji">🔊</span></span> Voice</div>
     </div>
     <input class="minput" id="ch-name-in" placeholder="channel-name" maxlength="40"
       onkeydown="if(event.key==='Enter')submitChModal()">
@@ -521,14 +521,14 @@ const POLL_MS      = 3000;
     <!-- NAV -->
     <div class="settings-nav">
       <div class="settings-nav-title">User Settings</div>
-      <div class="snav-item active" id="snav-account" onclick="switchSettings('account')">👤 Account</div>
-      <div class="snav-item" id="snav-profile" onclick="switchSettings('profile')">🎨 Profile</div>
-      <div class="snav-item" id="snav-notifs" onclick="switchSettings('notifs')">🔔 Notifications</div>
+      <div class="snav-item active" id="snav-account" onclick="switchSettings('account')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">person</span><span class="ic-emoji">👤</span></span> Account</div>
+      <div class="snav-item" id="snav-profile" onclick="switchSettings('profile')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">palette</span><span class="ic-emoji">🎨</span></span> Profile</div>
+      <div class="snav-item" id="snav-notifs" onclick="switchSettings('notifs')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">notifications</span><span class="ic-emoji">🔔</span></span> Notifications</div>
       <div class="snav-divider"></div>
       <div class="settings-nav-title">App</div>
-      <div class="snav-item" id="snav-appearance" onclick="switchSettings('appearance')">🖥️ Appearance</div>
+      <div class="snav-item" id="snav-appearance" onclick="switchSettings('appearance')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">desktop_windows</span><span class="ic-emoji">🖥️</span></span> Appearance</div>
       <div class="snav-divider"></div>
-      <div class="snav-item danger" onclick="confirmLogout()">🚪 Log out</div>
+      <div class="snav-item danger" onclick="confirmLogout()"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">logout</span><span class="ic-emoji">🚪</span></span> Log out</div>
       <div style="flex:1"></div>
       <div style="padding:10px;font-size:10px;color:var(--text-lo)">NexusChat v1.0</div>
     </div>
@@ -555,7 +555,7 @@ const POLL_MS      = 3000;
     <div id="srv-set-error" style="color:#f87171;font-size:13px;display:none"></div>
     <!-- Danger zone -->
     <div class="danger-zone">
-      <div class="danger-zone-title">⚠️ Danger Zone</div>
+      <div class="danger-zone-title"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">warning</span><span class="ic-emoji">⚠️</span></span> Danger Zone</div>
       <div class="danger-item">
         <div class="danger-item-info">
           <div class="danger-item-name">Delete this server</div>
@@ -957,7 +957,7 @@ function renderCustomSidebar(srv, chList){
   const vc=chList.filter(c=>c.type==='voice').map(c=>`
     <div class="ch-item${active?.id===c.id?' active':''}"
       onclick="goSrvChannel('${esc(srv.id)}','${esc(c.id)}','${esc(c.name)}','${esc(c.description||'')}','voice')">
-      <span class="ch-ico">🔊</span><span class="ch-name">${escH(c.name)}</span>
+      <span class="ch-ico">${icon('volume_up','🔊')}</span><span class="ch-name">${escH(c.name)}</span>
     </div>`).join('');
   const isCreator=srv.created_by===me.id;
   el.innerHTML=`
@@ -968,16 +968,16 @@ function renderCustomSidebar(srv, chList){
     ${vc?`<div class="section-label" style="margin-top:8px">Voice Channels</div>${vc}`:''}
     <div class="section-label" style="margin-top:14px">Server</div>
     <div class="ch-item" onclick="openMembersModal()">
-      <span class="ch-ico">👥</span><span class="ch-name">Members</span>
+      <span class="ch-ico">${icon('group','👥')}</span><span class="ch-name">Members</span>
     </div>
     <div class="ch-item" onclick="openInviteModal()">
-      <span class="ch-ico">📨</span><span class="ch-name">Invite people</span>
+      <span class="ch-ico">${icon('person_add','📨')}</span><span class="ch-name">Invite people</span>
     </div>
     ${isCreator?`<div class="ch-item" onclick="openServerSettings('${esc(srv.id)}')">
-      <span class="ch-ico">⚙️</span><span class="ch-name">Server settings</span>
+      <span class="ch-ico">${icon('settings','⚙️')}</span><span class="ch-name">Server settings</span>
     </div>`:''}
     ${!isCreator?`<div class="ch-item" style="color:var(--red);opacity:.8" onclick="leaveServer('${esc(srv.id)}')">
-      <span class="ch-ico">🚪</span><span class="ch-name">Leave server</span>
+      <span class="ch-ico">${icon('logout','🚪')}</span><span class="ch-name">Leave server</span>
     </div>`:''}`;
 }
 
@@ -1064,7 +1064,7 @@ function renderDefaultSidebar(){
     </div>`).join('');
   const vc=channels.filter(c=>c.type==='voice').map(c=>`
     <div class="ch-item${active?.id===c.id?' active':''}" onclick="goChannel('${esc(c.id)}','${esc(c.name)}','${esc(c.description||'')}','voice')">
-      <span class="ch-ico">🔊</span><span class="ch-name">${escH(c.name)}</span>
+      <span class="ch-ico">${icon('volume_up','🔊')}</span><span class="ch-name">${escH(c.name)}</span>
     </div>`).join('');
   el.innerHTML=`
     <div class="section-label">Text Channels <span class="section-add" onclick="openChModal(null)">+</span></div>
@@ -1802,7 +1802,7 @@ function notifsTabHTML(){
       <div class="toggle-switch${calls?' on':''}" id="tog-calls" onclick="toggleNotif('calls',this)"></div>
     </div>
     <div style="margin-top:14px;padding:10px;background:var(--bg-input);border-radius:8px;font-size:12px;color:var(--text-lo)">
-      🔔 Browser notifications require permission. Changes are saved automatically.
+      ${icon('notifications','🔔')} Browser notifications require permission. Changes are saved automatically.
     </div>`;
 }
 
@@ -2129,7 +2129,7 @@ function removePeerFromCall(pid){
   updateGridLayout(); updateParticipantCount();
 }
 function toggleCallMic(){if(!localStream)return;micOn=!micOn;localStream.getAudioTracks().forEach(t=>t.enabled=micOn);updateMicBtn();}
-function updateMicBtn(){const b=document.getElementById('ctrl-mic');b.textContent=micOn?'🎙️':'🔇';b.className='call-ctrl '+(micOn?'active-ctrl':'off-ctrl');}
+function updateMicBtn(){const b=document.getElementById('ctrl-mic');b.innerHTML=micOn?icon('mic','🎙️'):icon('mic_off','🔇');b.className='call-ctrl '+(micOn?'active-ctrl':'off-ctrl');}
 function toggleCallCam(){
   if(!localStream)return;
   const tracks=localStream.getVideoTracks();
@@ -2139,7 +2139,7 @@ function toggleCallCam(){
   renderTile('me',me.username+' (You)',me.avatar_color,localStream,true);
   updateCamBtn();
 }
-function updateCamBtn(){const b=document.getElementById('ctrl-cam');b.textContent=camOn?'📷':'🚫📷';b.className='call-ctrl '+(camOn?'active-ctrl':'neutral');}
+function updateCamBtn(){const b=document.getElementById('ctrl-cam');b.innerHTML=camOn?icon('videocam','📷'):icon('videocam_off','🚫📷');b.className='call-ctrl '+(camOn?'active-ctrl':'neutral');}
 async function toggleScreenShare(){
   if(!inCall)return;
   if(screenSharing){
@@ -2199,7 +2199,7 @@ document.getElementById('settings-panel').addEventListener('click',e=>{if(e.targ
 // ================================================================
 applyPreferences();
 if(!SUPABASE_URL||SUPABASE_URL.includes('YOUR')){
-  document.getElementById('auth-error').textContent='⚠️ Set your SUPABASE_URL and SUPABASE_KEY.';
+  document.getElementById('auth-error').innerHTML=icon('warning','⚠️')+' Set your SUPABASE_URL and SUPABASE_KEY.';
   document.getElementById('auth-error').classList.add('show');
 }else{tryAutoLogin();}
 </script>
