@@ -808,6 +808,8 @@ async function submitAuth(){
     const res=await rpc(authMode==='login'?'login_user':'register_user',{p_username:u,p_password:p});
     if(res&&res.error) return showAuthErr(res.error);
     me=res.user; token=res.token;
+    const myRoles=await hydrateRoles([me.id]);
+    if(myRoles[me.id]) Object.assign(me,myRoles[me.id]);
     localStorage.setItem('nc_token',token);
     localStorage.setItem('nc_user',JSON.stringify(me));
     syncToSheet();
@@ -834,6 +836,8 @@ async function tryAutoLogin(){
       return;
     }
     me=r.user; localStorage.setItem('nc_user',JSON.stringify(me));
+    const myRoles=await hydrateRoles([me.id]);
+    if(myRoles[me.id]) Object.assign(me,myRoles[me.id]);
     const badge=renderRoleBadges(me);
     document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
     document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
@@ -852,6 +856,8 @@ function logout(){
 // BOOT
 // ================================================================
 async function bootApp(){
+  const myRoles=await hydrateRoles([me.id]);
+  if(myRoles[me.id]) Object.assign(me,myRoles[me.id]);
   const banStatus=await checkMyModStatus(null);
   const activeBan=banStatus.find(a=>a.action_type==='ban');
   if(activeBan){ showBanScreen(activeBan); return; }
@@ -1080,7 +1086,7 @@ function renderDMItems(){
 async function loadMsgs(){
   document.getElementById('msgs').innerHTML=`<div class="empty-chat"><div style="font-size:26px">💬</div><div style="font-size:13px">Loading…</div></div>`;
   try{ await checkLiveModStatus(); }catch(e){ return; }
-  try{renderMsgs(await fetchMsgs()||[]);}catch(e){showToast('Failed to load messages','error');console.error(e);}
+  try{await renderMsgs(await fetchMsgs()||[]);}catch(e){showToast('Failed to load messages','error');console.error(e);}
 }
 async function fetchMsgs(){
   if(!active) return [];
@@ -1134,6 +1140,22 @@ function isOwnerOrCreator(user){
 // ================================================================
 let userCache={};
 let locallyDeletedIds=new Set();
+// Some RPCs only return the primary `role` column, not role2/role3.
+// Fetch the real, full role set straight from the users table (already
+// readable directly via REST elsewhere in this file) so all 3 slots show.
+async function hydrateRoles(ids){
+  const uniqueIds=[...new Set(ids.filter(Boolean))];
+  if(!uniqueIds.length) return {};
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/users?id=in.(${uniqueIds.join(',')})&select=id,role,role2,role3`,{
+      headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+    });
+    const rows=await res.json();
+    const map={};
+    if(Array.isArray(rows)) rows.forEach(r=>{map[r.id]={role:r.role||'',role2:r.role2||'',role3:r.role3||''};});
+    return map;
+  }catch(e){ return {}; }
+}
 function cacheUser(u){
   if(!u||!u.id) return;
   userCache[u.id]={
@@ -1310,7 +1332,7 @@ async function submitMod(){
     btn.disabled=false;
   }
 }
-function renderMsgs(msgs){
+async function renderMsgs(msgs){
   const el=document.getElementById('msgs');
   const wasNearBottom=(el.scrollHeight-el.scrollTop-el.clientHeight)<120;
   const prevScrollTop=el.scrollTop;
@@ -1318,6 +1340,8 @@ function renderMsgs(msgs){
     el.innerHTML=`<div class="empty-chat"><div style="font-size:34px">💬</div><div>No messages yet — say hello!</div></div>`;
     return;
   }
+  const roleMap=await hydrateRoles(msgs.map(m=>m.sender&&m.sender.id));
+  msgs.forEach(m=>{ if(m.sender&&roleMap[m.sender.id]) Object.assign(m.sender,roleMap[m.sender.id]); });
   let h=`<div style="flex:1"></div><div class="day-div">Today</div>`;
   msgs.forEach(m=>{
     cacheUser(m.sender);
@@ -1361,7 +1385,7 @@ async function poll(){
   if(!active||!token) return;
   try{
     await checkLiveModStatus();
-    renderMsgs(await fetchMsgs()||[]);
+    await renderMsgs(await fetchMsgs()||[]);
   }catch(e){}
 }
 async function sendMsg(){
@@ -1376,7 +1400,7 @@ async function sendMsg(){
     else if(active.type==='channel') await rpc('send_channel_message',{p_token:token,p_channel_id:active.id,p_content:txt});
     else if(active.type==='srv-channel'&&active.id) await rpc('send_server_message',{p_token:token,p_channel_id:active.id,p_content:txt});
     else if(active.type==='dm') await rpc('send_direct_message',{p_token:token,p_receiver_id:active.userId,p_content:txt});
-    renderMsgs(await fetchMsgs()||[]);
+    await renderMsgs(await fetchMsgs()||[]);
   }catch(e){showToast('Failed to send','error');inp.value=txt;}
 }
 
@@ -1560,6 +1584,8 @@ async function openMembersModal(){
     const r=await rpc('get_server_members',{p_token:token,p_server_id:activeServerId});
     if(r.error){document.getElementById('members-list').innerHTML=`<div style="color:#f87171;padding:10px">${r.error}</div>`;return;}
     const members=Array.isArray(r)?r:[];
+    const roleMap=await hydrateRoles(members.map(m=>m.id));
+    members.forEach(m=>{ if(roleMap[m.id]) Object.assign(m,roleMap[m.id]); });
     members.forEach(cacheUser);
     document.getElementById('members-list').innerHTML=members.length
       ?members.map(m=>`
