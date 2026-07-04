@@ -110,6 +110,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .msg-deleted{color:var(--text-lo);font-style:italic;font-size:13px}
 .msg-pending-delete{opacity:.6;border-left:3px solid var(--gold);padding-left:8px}
 .pending-delete-note{font-size:11px;color:var(--gold);margin-top:4px}
+.mute-banner{background:#2a1200;border:1px solid var(--gold);color:#f5c518;font-size:12.5px;padding:8px 14px;border-radius:10px;margin:0 12px 8px 12px}
 .msg-reply-preview{background:var(--bg-input);border-left:3px solid var(--accent);border-radius:4px;padding:4px 8px;margin-bottom:4px;font-size:12px;color:var(--text-lo);display:flex;gap:6px;align-items:center}
 .msg-reply-preview .reply-who{color:var(--accent);font-weight:600}
 .msg-vote-btn{font-size:11px;background:var(--gold);color:#000;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:6px;font-weight:600}
@@ -368,6 +369,7 @@ const POLL_MS      = 3000;
       <button class="reply-cancel" onclick="cancelReply()">✕</button>
     </div>
     <div class="input-wrap">
+      <div class="mute-banner" id="mute-banner" style="display:none"></div>
       <div class="input-box">
         <button class="icon-btn" onclick="showToast('File upload coming soon!')">📎</button>
         <textarea class="msg-field" id="msg-in" placeholder="Message everyone…" rows="1"
@@ -617,6 +619,90 @@ let me=null, token=null;
 let channels=[], allUsers=[], myDMs=[];
 let customServers=[];
 let activeServerId=null;
+let currentMute=null; // {action_type:'mute', reason, message, expires_at, moderator} for the CURRENT context, or null
+
+// ================================================================
+// MUTE / BAN ENFORCEMENT (client-side; source of truth is mod_actions
+// on the server via get_my_mod_status — same RPC already used elsewhere)
+// ================================================================
+async function checkMyModStatus(serverId){
+  try{
+    const r=await rpc('get_my_mod_status',{p_token:token,p_server_id:serverId||null});
+    return Array.isArray(r)?r:[];
+  }catch(e){ return []; }
+}
+function formatRelativeTime(iso){
+  if(!iso) return '';
+  const diffMs=new Date(iso)-new Date();
+  if(diffMs<=0) return 'shortly';
+  const mins=Math.round(diffMs/60000);
+  if(mins<60) return `in ${mins} minute${mins===1?'':'s'}`;
+  const hrs=Math.round(mins/60);
+  if(hrs<24) return `in ${hrs} hour${hrs===1?'':'s'}`;
+  const days=Math.round(hrs/24);
+  return `in ${days} day${days===1?'':'s'}`;
+}
+function showBanScreen(ban){
+  clearInterval(pollTimer); clearInterval(syncTimer);
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
+  let el=document.getElementById('ban-screen');
+  if(!el){
+    el=document.createElement('div');
+    el.id='ban-screen';
+    el.style.cssText='position:fixed;inset:0;background:#0d0f18;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;font-family:inherit';
+    document.body.appendChild(el);
+  }
+  const modName=ban.moderator?.username||'a moderator';
+  const untilText=ban.expires_at?`You'll be able to rejoin ${formatRelativeTime(ban.expires_at)}.`:`This ban does not have an end date.`;
+  el.innerHTML=`
+    <div style="max-width:420px;width:100%;text-align:center;background:#1c1f2e;border:1px solid #ff4757;border-radius:16px;padding:32px">
+      <div style="font-size:42px;margin-bottom:8px">⛔</div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:6px">You've been banned</div>
+      <div style="font-size:13.5px;color:#9aa0b4;margin-bottom:16px">You were banned by <b>${escH(modName)}</b>.</div>
+      ${ban.reason?`<div style="font-size:13px;color:#f87171;margin-bottom:10px"><b>Reason:</b> ${escH(ban.reason)}</div>`:''}
+      ${ban.message?`<div style="font-size:13px;color:#e5e7eb;background:#12141f;border-radius:10px;padding:10px 14px;margin-bottom:16px;text-align:left">"${escH(ban.message)}"</div>`:''}
+      <div style="font-size:13px;color:#9aa0b4;margin-bottom:22px">${untilText}</div>
+      <button onclick="logout();document.getElementById('ban-screen').style.display='none'" style="background:#2a2d3d;border:1px solid #333;color:#fff;padding:10px 20px;border-radius:10px;cursor:pointer;font-size:13px">Log out</button>
+    </div>`;
+  el.style.display='flex';
+}
+function updateMuteBanner(){
+  const el=document.getElementById('mute-banner');
+  const btn=document.getElementById('send-btn');
+  const inp=document.getElementById('msg-in');
+  if(!el) return;
+  if(currentMute){
+    const untilText=currentMute.expires_at?`until ${new Date(currentMute.expires_at).toLocaleString()}`:'permanently';
+    el.innerHTML=`🔇 You're muted ${escH(untilText)}${currentMute.reason?` — ${escH(currentMute.reason)}`:''}. You can still read messages.`;
+    el.style.display='block';
+    if(inp){inp.disabled=true;inp.placeholder='You are muted';}
+    if(btn) btn.disabled=true;
+  }else{
+    el.style.display='none';
+    if(inp){inp.disabled=false;if(inp.placeholder==='You are muted')inp.placeholder='Message everyone…';}
+    if(btn) btn.disabled=!(inp&&inp.value.trim());
+  }
+}
+async function checkLiveModStatus(){
+  const globalStatus=await checkMyModStatus(null);
+  const globalBan=globalStatus.find(a=>a.action_type==='ban');
+  if(globalBan){ showBanScreen(globalBan); throw new Error('banned'); }
+  let serverStatus=[];
+  if(active&&active.type==='srv-channel'&&activeServerId){
+    serverStatus=await checkMyModStatus(activeServerId);
+    const serverBan=serverStatus.find(a=>a.action_type==='ban');
+    if(serverBan){
+      showToast('You are banned from this server','error');
+      goGlobal();
+      return;
+    }
+  }
+  const globalMute=globalStatus.find(a=>a.action_type==='mute');
+  const serverMute=serverStatus.find(a=>a.action_type==='mute');
+  currentMute=globalMute||serverMute||null;
+  updateMuteBanner();
+}
 let active=null;
 let view='global';
 let pollTimer=null, syncTimer=null;
@@ -766,6 +852,9 @@ function logout(){
 // BOOT
 // ================================================================
 async function bootApp(){
+  const banStatus=await checkMyModStatus(null);
+  const activeBan=banStatus.find(a=>a.action_type==='ban');
+  if(activeBan){ showBanScreen(activeBan); return; }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   const avEl=document.getElementById('my-av');
@@ -990,6 +1079,7 @@ function renderDMItems(){
 // ================================================================
 async function loadMsgs(){
   document.getElementById('msgs').innerHTML=`<div class="empty-chat"><div style="font-size:26px">💬</div><div style="font-size:13px">Loading…</div></div>`;
+  try{ await checkLiveModStatus(); }catch(e){ return; }
   try{renderMsgs(await fetchMsgs()||[]);}catch(e){showToast('Failed to load messages','error');console.error(e);}
 }
 async function fetchMsgs(){
@@ -1087,13 +1177,31 @@ function showMsgCtx(ev,msgId,senderId){
   menu.classList.add('show');
   positionCtxMenu(ev,menu);
 }
+function markMsgDeletedInDom(msgId){
+  const row=Array.from(document.querySelectorAll('.msg-row[data-msg-id]')).find(r=>r.getAttribute('data-msg-id')===msgId);
+  if(!row) return;
+  const body=row.querySelector('.msg-body');
+  if(!body) return;
+  const hdr=body.querySelector('.msg-hdr');
+  body.innerHTML='';
+  if(hdr) body.appendChild(hdr);
+  const txt=document.createElement('div');
+  txt.className='msg-txt msg-deleted';
+  txt.textContent='🚫 Message deleted';
+  body.appendChild(txt);
+}
 async function handleDeleteMsg(msgId){
   document.getElementById('ctx-menu').classList.remove('show');
   const table=currentMsgTable();
   try{
     const r=await rpc('request_delete_message',{p_token:token,p_message_id:msgId,p_table:table});
     if(r&&r.error){showToast(r.error,'error');return;}
-    showToast(r.status==='pending_vote'?'Delete requested — needs a 2nd moderator to confirm':'Message deleted','success');
+    if(r&&r.status==='pending_vote'){
+      showToast('Delete requested — needs a 2nd moderator to confirm','success');
+    }else{
+      showToast('Message deleted','success');
+      markMsgDeletedInDom(msgId);
+    }
     poll();
   }catch(e){showToast('Failed to delete: '+(e.message||'error'),'error');}
 }
@@ -1103,6 +1211,7 @@ async function approveDeleteVote(msgId){
     const r=await rpc('approve_delete_message',{p_token:token,p_message_id:msgId,p_table:table});
     if(r&&r.error){showToast(r.error,'error');return;}
     showToast('Message deleted','success');
+    markMsgDeletedInDom(msgId);
     poll();
   }catch(e){showToast('Failed: '+(e.message||'error'),'error');}
 }
@@ -1246,12 +1355,16 @@ function renderMsgs(msgs){
 }
 async function poll(){
   if(!active||!token) return;
-  try{renderMsgs(await fetchMsgs()||[]);}catch(e){}
+  try{
+    await checkLiveModStatus();
+    renderMsgs(await fetchMsgs()||[]);
+  }catch(e){}
 }
 async function sendMsg(){
   const inp=document.getElementById('msg-in');
   const txt=inp.value.trim();
   if(!txt||!token) return;
+  if(currentMute){ showToast('You are muted and cannot send messages','error'); return; }
   inp.value=''; inp.style.height='';
   document.getElementById('send-btn').disabled=true;
   try{
