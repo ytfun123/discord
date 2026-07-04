@@ -834,7 +834,7 @@ async function tryAutoLogin(){
       return;
     }
     me=r.user; localStorage.setItem('nc_user',JSON.stringify(me));
-    const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
+    const badge=renderRoleBadges(me);
     document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
     document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
     syncToSheet();
@@ -861,7 +861,7 @@ async function bootApp(){
   avEl.style.background=me.avatar_color;
   avEl.textContent=me.username.slice(0,2).toUpperCase();
   avEl.innerHTML+=`<div class="my-dot"></div>`;
-  const badge=me.role?` <span class="role-badge role-${me.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[me.role]||me.role}</span>`:'';
+  const badge=renderRoleBadges(me);
   document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
   document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
   channels=await dbGet('channels','?order=created_at.asc');
@@ -1100,19 +1100,16 @@ function currentMsgTable(){
   return 'direct_messages';
 }
 const ROLE_LABELS={'C':'Creator','O':'Owner','A':'Admin','M':'Mod','T':'Tester','H':'Helper'};
-function roleBadge(role,isCreator){
-  if(isCreator) return `<span class="creator-badge">Creator</span>`;
-  if(!role) return '';
-  return `<span class="role-badge role-${role}">${ROLE_LABELS[role]||role}</span>`;
-}
-function allRoleBadges(sender){
-  let html='';
-  if(sender.is_creator) return `<span class="creator-badge">Creator</span>`;
-  for(const r of [sender.role,sender.role2,sender.role3]){
-    if(r&&ROLE_LABELS[r]) html+=`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`;
+function renderRoleBadges(user){
+  const roles=[user?.role,user?.role2,user?.role3].filter(r=>r&&ROLE_LABELS[r]);
+  if(roles.length){
+    return roles.map(r=>`<span class="role-badge role-${r}">${ROLE_LABELS[r]}</span>`).join('');
   }
-  return html;
+  return user?.is_creator?`<span class="creator-badge">Creator</span>`:'';
 }
+// Kept for backward compatibility with any old call sites
+function roleBadge(role,isCreator){ return renderRoleBadges({role,is_creator:isCreator}); }
+function allRoleBadges(sender){ return renderRoleBadges(sender); }
 function isMod(user){
   // Check if user has moderation power
   const roles=[user?.role,user?.role2,user?.role3];
@@ -1328,7 +1325,7 @@ function renderMsgs(msgs){
     const ini=m.sender.username.slice(0,2).toUpperCase();
     const t=new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const av=`<div class="msg-av" style="background:${m.sender.avatar_color}">${ini}</div>`;
-    const badge=roleBadge(m.sender.role,m.sender.is_creator);
+    const badge=renderRoleBadges(m.sender);
     const num=m.sender.join_number?`<span class="msg-num">#${m.sender.join_number}</span>`:'';
     const isDeleted=m.deleted||locallyDeletedIds.has(m.id);
     let bodyHtml;
@@ -1571,7 +1568,7 @@ async function openMembersModal(){
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:4px">
               ${escH(m.username)}
-              ${m.is_creator?'<span class="creator-badge">Creator</span>':m.role?`<span class="role-badge role-${m.role}">${{C:'Creator',O:'Owner',A:'Admin',M:'Mod'}[m.role]||m.role}</span>`:''}
+              ${renderRoleBadges(m)}
             </div>
             ${m.join_number?`<div style="font-size:10px;color:var(--text-lo)">#${m.join_number}</div>`:''}
           </div>
