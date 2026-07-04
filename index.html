@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NexusChat</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -111,6 +112,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .msg-pending-delete{opacity:.6;border-left:3px solid var(--gold);padding-left:8px}
 .pending-delete-note{font-size:11px;color:var(--gold);margin-top:4px}
 .mute-banner{background:#2a1200;border:1px solid var(--gold);color:#f5c518;font-size:12.5px;padding:8px 14px;border-radius:10px;margin:0 12px 8px 12px}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;font-size:1.15em;vertical-align:-3px;line-height:1}
+.ic-emoji{display:none}
+.ic-google{display:inline-block}
+body.icon-style-emoji .ic-emoji{display:inline-block}
+body.icon-style-emoji .ic-google{display:none}
 .msg-reply-preview{background:var(--bg-input);border-left:3px solid var(--accent);border-radius:4px;padding:4px 8px;margin-bottom:4px;font-size:12px;color:var(--text-lo);display:flex;gap:6px;align-items:center}
 .msg-reply-preview .reply-who{color:var(--accent);font-weight:600}
 .msg-vote-btn{font-size:11px;background:var(--gold);color:#000;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;margin-left:6px;font-weight:600}
@@ -362,7 +368,7 @@ const POLL_MS      = 3000;
         <button class="call-btn" onclick="startCall()">📞 Call</button>
       </div>
     </div>
-    <div class="msgs" id="msgs"><div class="empty-chat"><div style="font-size:28px">💬</div><div>Loading…</div></div></div>
+    <div class="msgs" id="msgs"><div class="empty-chat"><div style="font-size:28px" class="ic-wrap"><span class="material-symbols-outlined ic-google" style="font-size:28px">chat_bubble</span><span class="ic-emoji">💬</span></div><div>Loading…</div></div></div>
     <div class="reply-bar" id="reply-bar">
       <span style="font-size:13px;color:var(--text-lo)">↩ Replying to</span>
       <span class="reply-bar-preview" id="reply-bar-preview"></span>
@@ -371,10 +377,10 @@ const POLL_MS      = 3000;
     <div class="input-wrap">
       <div class="mute-banner" id="mute-banner" style="display:none"></div>
       <div class="input-box">
-        <button class="icon-btn" onclick="showToast('File upload coming soon!')">📎</button>
+        <button class="icon-btn" onclick="showToast('File upload coming soon!')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">attach_file</span><span class="ic-emoji">📎</span></span></button>
         <textarea class="msg-field" id="msg-in" placeholder="Message everyone…" rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="icon-btn" onclick="showToast('Emoji coming soon!')">😊</button>
+        <button class="icon-btn" onclick="showToast('Emoji coming soon!')"><span class="ic-wrap"><span class="material-symbols-outlined ic-google">mood</span><span class="ic-emoji">😊</span></span></button>
         <button class="send-btn" id="send-btn" onclick="sendMsg()" disabled>➤</button>
       </div>
     </div>
@@ -657,7 +663,7 @@ function showBanScreen(ban){
   const untilText=ban.expires_at?`You'll be able to rejoin ${formatRelativeTime(ban.expires_at)}.`:`This ban does not have an end date.`;
   el.innerHTML=`
     <div style="max-width:420px;width:100%;text-align:center;background:#1c1f2e;border:1px solid #ff4757;border-radius:16px;padding:32px">
-      <div style="font-size:42px;margin-bottom:8px">⛔</div>
+      <div style="font-size:42px;margin-bottom:8px">${icon('block','⛔')}</div>
       <div style="font-size:20px;font-weight:700;margin-bottom:6px">You've been banned</div>
       <div style="font-size:13.5px;color:#9aa0b4;margin-bottom:16px">You were banned by <b>${escH(modName)}</b>.</div>
       ${ban.reason?`<div style="font-size:13px;color:#f87171;margin-bottom:10px"><b>Reason:</b> ${escH(ban.reason)}</div>`:''}
@@ -674,7 +680,7 @@ function updateMuteBanner(){
   if(!el) return;
   if(currentMute){
     const untilText=currentMute.expires_at?`until ${new Date(currentMute.expires_at).toLocaleString()}`:'permanently';
-    el.innerHTML=`🔇 You're muted ${escH(untilText)}${currentMute.reason?` — ${escH(currentMute.reason)}`:''}. You can still read messages.`;
+    el.innerHTML=`${icon('volume_off','🔇')} You're muted ${escH(untilText)}${currentMute.reason?` — ${escH(currentMute.reason)}`:''}. You can still read messages.`;
     el.style.display='block';
     if(inp){inp.disabled=true;inp.placeholder='You are muted';}
     if(btn) btn.disabled=true;
@@ -1084,7 +1090,7 @@ function renderDMItems(){
 // MESSAGES
 // ================================================================
 async function loadMsgs(){
-  document.getElementById('msgs').innerHTML=`<div class="empty-chat"><div style="font-size:26px">💬</div><div style="font-size:13px">Loading…</div></div>`;
+  document.getElementById('msgs').innerHTML=`<div class="empty-chat"><div style="font-size:26px">${icon('chat_bubble','💬')}</div><div style="font-size:13px">Loading…</div></div>`;
   try{ await checkLiveModStatus(); }catch(e){ return; }
   try{await renderMsgs(await fetchMsgs()||[]);}catch(e){showToast('Failed to load messages','error');console.error(e);}
 }
@@ -1140,6 +1146,13 @@ function isOwnerOrCreator(user){
 // ================================================================
 let userCache={};
 let locallyDeletedIds=new Set();
+// Renders an icon that shows as a Google Fonts (Material Symbols) glyph by
+// default, or as an emoji when the person switches "Icon style" to Emoji
+// in Settings > Appearance. Both are always in the DOM; CSS + a body class
+// decide which one is visible, so toggling is instant with no re-render.
+function icon(materialName,emoji){
+  return `<span class="ic-wrap"><span class="material-symbols-outlined ic-google">${materialName}</span><span class="ic-emoji">${emoji}</span></span>`;
+}
 // Some RPCs only return the primary `role` column, not role2/role3.
 // Fetch the real, full role set straight from the users table (already
 // readable directly via REST elsewhere in this file) so all 3 slots show.
@@ -1180,17 +1193,17 @@ function showMsgCtx(ev,msgId,senderId){
     html+=`<div class="ctx-item" style="pointer-events:none;font-weight:700;color:var(--text-hi)">${escH(target.username)}</div><div class="ctx-divider"></div>`;
   }
   if(canModTarget){
-    html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(senderId)}')">🔇 Mute</div>`;
+    html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(senderId)}')">${icon('volume_off','🔇')} Mute</div>`;
     const inServer=active&&active.type==='srv-channel'&&!!activeServerId;
-    if(inServer) html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(senderId)}')">👢 Kick from server</div>`;
-    html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(senderId)}')">⛔ Ban</div>`;
+    if(inServer) html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(senderId)}')">${icon('logout','👢')} Kick from server</div>`;
+    html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(senderId)}')">${icon('block','⛔')} Ban</div>`;
   }
   if(canInstantDelete||canVoteDelete){
     if(canModTarget) html+=`<div class="ctx-divider"></div>`;
     if(canInstantDelete){
-      html+=`<div class="ctx-item danger" onclick="handleDeleteMsg('${esc(msgId)}')">🗑️ Delete message</div>`;
+      html+=`<div class="ctx-item danger" onclick="handleDeleteMsg('${esc(msgId)}')">${icon('delete','🗑️')} Delete message</div>`;
     }else{
-      html+=`<div class="ctx-item warn" onclick="handleDeleteMsg('${esc(msgId)}')">🗳️ Request delete (needs 2nd mod)</div>`;
+      html+=`<div class="ctx-item warn" onclick="handleDeleteMsg('${esc(msgId)}')">${icon('how_to_vote','🗳️')} Request delete (needs 2nd mod)</div>`;
     }
   }
   menu.innerHTML=html;
@@ -1207,7 +1220,7 @@ function markMsgDeletedInDom(msgId){
   if(hdr) body.appendChild(hdr);
   const txt=document.createElement('div');
   txt.className='msg-txt msg-deleted';
-  txt.textContent='🚫 Message deleted';
+  txt.innerHTML=icon('block','🚫')+' Message deleted';
   body.appendChild(txt);
 }
 async function handleDeleteMsg(msgId){
@@ -1251,11 +1264,11 @@ function showUserCtx(ev,targetId){
   }
   const inServer=active&&active.type==='srv-channel'&&!!activeServerId;
   let html=`<div class="ctx-item" style="pointer-events:none;font-weight:700;color:var(--text-hi)">${escH(target.username)}</div><div class="ctx-divider"></div>`;
-  html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(targetId)}')">🔇 Mute</div>`;
+  html+=`<div class="ctx-item warn" onclick="openMod('mute','${esc(targetId)}')">${icon('volume_off','🔇')} Mute</div>`;
   if(inServer){
-    html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(targetId)}')">👢 Kick from server</div>`;
+    html+=`<div class="ctx-item warn" onclick="openMod('kick','${esc(targetId)}')">${icon('logout','👢')} Kick from server</div>`;
   }
-  html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(targetId)}')">⛔ Ban</div>`;
+  html+=`<div class="ctx-item danger" onclick="openMod('ban','${esc(targetId)}')">${icon('block','⛔')} Ban</div>`;
   menu.innerHTML=html;
   menu.classList.add('show');
   positionCtxMenu(ev,menu);
@@ -1337,7 +1350,7 @@ async function renderMsgs(msgs){
   const wasNearBottom=(el.scrollHeight-el.scrollTop-el.clientHeight)<120;
   const prevScrollTop=el.scrollTop;
   if(!msgs||!msgs.length){
-    el.innerHTML=`<div class="empty-chat"><div style="font-size:34px">💬</div><div>No messages yet — say hello!</div></div>`;
+    el.innerHTML=`<div class="empty-chat"><div style="font-size:34px">${icon('chat_bubble','💬')}</div><div>No messages yet — say hello!</div></div>`;
     return;
   }
   const roleMap=await hydrateRoles(msgs.map(m=>m.sender&&m.sender.id));
@@ -1354,15 +1367,15 @@ async function renderMsgs(msgs){
     const isDeleted=m.deleted||locallyDeletedIds.has(m.id);
     let bodyHtml;
     if(isDeleted){
-      bodyHtml=`<div class="msg-txt msg-deleted">🚫 Message deleted</div>`;
+      bodyHtml=`<div class="msg-txt msg-deleted">${icon('block','🚫')} Message deleted</div>`;
     }else{
       let pend='';
       if(m.delete_vote){
         const iVoted=m.delete_vote===me.id;
         if(iVoted){
-          pend=`<div class="pending-delete-note">⚠️ You requested deletion — waiting for another moderator to confirm</div>`;
+          pend=`<div class="pending-delete-note">${icon('warning','⚠️')} You requested deletion — waiting for another moderator to confirm</div>`;
         }else if(isMod(me)){
-          pend=`<div class="pending-delete-note">⚠️ Pending deletion — <span style="cursor:pointer;text-decoration:underline" onclick="approveDeleteVote('${esc(m.id)}')">confirm delete</span></div>`;
+          pend=`<div class="pending-delete-note">${icon('warning','⚠️')} Pending deletion — <span style="cursor:pointer;text-decoration:underline" onclick="approveDeleteVote('${esc(m.id)}')">confirm delete</span></div>`;
         }
       }
       bodyHtml=`<div class="msg-txt">${escH(m.content)}</div>${pend}`;
@@ -1796,6 +1809,7 @@ function notifsTabHTML(){
 function appearanceTabHTML(){
   const compact=localStorage.getItem('nc_compact')==='1';
   const ts=localStorage.getItem('nc_timestamps')!=='0';
+  const iconEmoji=localStorage.getItem('nc_icon_emoji')==='1';
   return `
     <div class="s-section-title">Appearance</div>
     <div class="s-toggle">
@@ -1805,6 +1819,10 @@ function appearanceTabHTML(){
     <div class="s-toggle">
       <div><div class="s-toggle-label">Show timestamps</div><div class="s-toggle-sub">Show time next to each message</div></div>
       <div class="toggle-switch${ts?' on':''}" id="tog-timestamps" onclick="toggleAppearance('timestamps',this)"></div>
+    </div>
+    <div class="s-toggle">
+      <div><div class="s-toggle-label">Emoji icons</div><div class="s-toggle-sub">Off = Google Fonts icons (default) · On = classic emoji</div></div>
+      <div class="toggle-switch${iconEmoji?' on':''}" id="tog-icon-emoji" onclick="toggleAppearance('iconEmoji',this)"></div>
     </div>
     <div style="height:16px"></div>
     <div style="font-size:12px;font-weight:600;color:var(--text-lo);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Accent color</div>
@@ -1918,6 +1936,10 @@ function toggleAppearance(key,el){
   if(key==='timestamps'){
     localStorage.setItem('nc_timestamps',val?'1':'0');
   }
+  if(key==='iconEmoji'){
+    localStorage.setItem('nc_icon_emoji',val?'1':'0');
+    document.body.classList.toggle('icon-style-emoji',val);
+  }
 }
 
 function confirmLogout(){closeSettings();logout();}
@@ -1930,6 +1952,7 @@ function applyPreferences(){
     document.documentElement.style.setProperty('--accent-soft',accent+'55');
   }
   if(localStorage.getItem('nc_compact')==='1') document.body.classList.add('compact');
+  if(localStorage.getItem('nc_icon_emoji')==='1') document.body.classList.add('icon-style-emoji');
 }
 
 // ----------------------------------------------------------------
