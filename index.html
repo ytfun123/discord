@@ -879,19 +879,13 @@ function logout(){
 // BOOT
 // ================================================================
 async function bootApp(){
-  const myRoles=await hydrateRoles([me.id]);
-  if(myRoles[me.id]) Object.assign(me,myRoles[me.id]);
-  const banStatus=await checkMyModStatus(null);
-  const activeBan=banStatus.find(a=>a.action_type==='ban');
-  if(activeBan){ showBanScreen(activeBan); return; }
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   const avEl=document.getElementById('my-av');
   avEl.style.background=me.avatar_color;
   avEl.textContent=me.username.slice(0,2).toUpperCase();
   avEl.innerHTML+=`<div class="my-dot"></div>`;
-  const badge=renderRoleBadges(me);
-  document.getElementById('my-name-el').innerHTML=escH(me.username)+badge;
+  document.getElementById('my-name-el').innerHTML=escH(me.username)+renderRoleBadges(me);
   document.getElementById('my-tag-el').textContent=me.join_number?`#${me.join_number} · Online`:'Online';
   channels=await dbGet('channels','?order=created_at.asc');
   await loadAllUsers();
@@ -902,6 +896,19 @@ async function bootApp(){
   pollTimer=setInterval(poll,POLL_MS);
   if(syncTimer) clearInterval(syncTimer);
   syncTimer=setInterval(()=>syncToSheet(),5*60*1000);
+  // Role + ban checks happen quietly in the background so they never
+  // delay showing the app on load — matches the instant-boot pattern
+  // already used for session re-validation below.
+  hydrateRoles([me.id]).then(myRoles=>{
+    if(myRoles[me.id]){
+      Object.assign(me,myRoles[me.id]);
+      document.getElementById('my-name-el').innerHTML=escH(me.username)+renderRoleBadges(me);
+    }
+  }).catch(()=>{});
+  checkMyModStatus(null).then(banStatus=>{
+    const activeBan=banStatus.find(a=>a.action_type==='ban');
+    if(activeBan) showBanScreen(activeBan);
+  }).catch(()=>{});
 }
 async function loadAllUsers(){
   try{const r=await rpc('get_users',{p_token:token});if(Array.isArray(r))allUsers=r;}catch(e){}
