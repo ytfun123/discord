@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #auth-screen{position:fixed;inset:0;background:var(--bg-app);display:flex;align-items:center;justify-content:center;z-index:1000}
 .auth-box{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;padding:36px;width:370px;display:flex;flex-direction:column;gap:18px}
 .auth-logo{display:flex;align-items:center;gap:12px;justify-content:center}
-.auth-logo-icon{width:46px;height:46px;background:var(#1a1d27);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;object-fit:cover}
+.auth-logo-icon{width:46px;height:46px;background:#1a1d27;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;object-fit:cover}
 .auth-logo-name{font-size:22px;font-weight:700}
 .auth-tabs{display:flex;border-bottom:1px solid var(--border)}
 .auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;color:var(--text-lo);font-size:14px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
@@ -117,6 +117,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .msg-pending-delete{opacity:.6;border-left:3px solid var(--gold);padding-left:8px}
 .pending-delete-note{font-size:11px;color:var(--gold);margin-top:4px}
 .mute-banner{background:#2a1200;border:1px solid var(--gold);color:#f5c518;font-size:12.5px;padding:8px 14px;border-radius:10px;margin:0 12px 8px 12px}
+.mod-request-alerts{position:fixed;top:16px;right:16px;z-index:800;display:flex;flex-direction:column;gap:8px;max-width:320px}
+.mod-request-card{background:#1c1f2e;border:1px solid var(--gold);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px}
+.mod-request-card .mrq-title{font-weight:600;margin-bottom:4px;color:var(--text-hi)}
+.mod-request-card .mrq-meta{font-size:11px;color:var(--text-lo);margin-bottom:10px}
+.mod-request-card .mrq-actions{display:flex;gap:8px}
+.mod-request-card button{flex:1;padding:7px 0;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600}
+.mod-request-card .mrq-approve{background:var(--green);color:#04150a}
+.mod-request-card .mrq-deny{background:#2a1010;color:#ff6b6b;border:1px solid #ff6b6b}
 .modlist-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)}
 .modlist-row:last-child{border-bottom:none}
 .modlist-info{flex:1;min-width:0}
@@ -700,6 +708,9 @@ const POLL_MS      = 3000;
 <!-- MOD NOTIFICATIONS (mute/ban messages shown to user) -->
 <div id="mod-notifications" style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:700;display:flex;flex-direction:column;gap:8px;max-width:440px;width:90%;pointer-events:none"></div>
 
+<!-- PENDING MOD REQUEST ALERTS (Admin+ approve/deny a plain Mod's ban/mute) -->
+<div class="mod-request-alerts" id="mod-request-alerts"></div>
+
 <script>
 // ================================================================
 // STATE
@@ -794,7 +805,7 @@ async function checkLiveModStatus(){
 }
 let active=null;
 let view='global';
-let pollTimer=null, syncTimer=null;
+let pollTimer=null, syncTimer=null, modReqTimer=null;
 let newChType='text', selectedUser=null;
 let pendingChServerId=null;
 let currentInviteCode=null;
@@ -936,7 +947,8 @@ async function tryAutoLogin(){
 
 function logout(){
   endCall(); destroyPeer(); localStorage.clear(); me=null; token=null;
-  clearInterval(pollTimer); clearInterval(syncTimer);
+  clearInterval(pollTimer); clearInterval(syncTimer); clearInterval(modReqTimer);
+  const alertsEl=document.getElementById('mod-request-alerts'); if(alertsEl) alertsEl.innerHTML='';
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
 }
@@ -964,6 +976,9 @@ async function bootApp(){
   pollTimer=setInterval(poll,POLL_MS);
   if(syncTimer) clearInterval(syncTimer);
   syncTimer=setInterval(()=>syncToSheet(),5*60*1000);
+  if(modReqTimer) clearInterval(modReqTimer);
+  modReqTimer=setInterval(checkPendingModRequests,5000);
+  checkPendingModRequests();
   // Role + ban checks happen quietly in the background so they never
   // delay showing the app on load — matches the instant-boot pattern
   // already used for session re-validation below.
@@ -1496,7 +1511,11 @@ async function submitMod(){
     }
     if(r&&r.error){errEl.textContent=r.error;errEl.style.display='block';btn.disabled=false;return;}
     const verb=modAction.type==='mute'?'muted':modAction.type==='kick'?'kicked':'banned';
-    showToast(`${modAction.targetUsername} was ${verb}`,'success');
+    if(r&&r.status==='pending_approval'){
+      showToast(`Request sent — waiting for an Admin, Owner, Co-Owner, or Creator to approve ${verb==='muted'?'muting':'banning'} ${modAction.targetUsername}`,'success');
+    }else{
+      showToast(`${modAction.targetUsername} was ${verb}`,'success');
+    }
     const wasServer=!!serverId;
     closeMod();
     if(document.getElementById('members-modal').classList.contains('on')&&wasServer) openMembersModal();
@@ -1788,6 +1807,45 @@ const MODLIST_DURATIONS=[
   {label:'6 hours',mins:360},{label:'1 day',mins:1440},{label:'7 days',mins:10080},
   {label:'Permanent',mins:0}
 ];
+// ================================================================
+// PENDING MOD REQUESTS — plain Mods' mute/ban attempts wait here for
+// an Admin, Owner, Co-Owner, or Creator to approve or deny.
+// ================================================================
+async function checkPendingModRequests(){
+  if(!me||!token||!isAdmin(me)){
+    const el=document.getElementById('mod-request-alerts');
+    if(el) el.innerHTML='';
+    return;
+  }
+  try{
+    const r=await rpc('get_pending_mod_requests',{p_token:token});
+    renderModRequestAlerts(Array.isArray(r)?r:[]);
+  }catch(e){}
+}
+function renderModRequestAlerts(list){
+  const el=document.getElementById('mod-request-alerts');
+  if(!el) return;
+  if(!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=list.map(rq=>{
+    const durText=rq.duration_minutes?`${rq.duration_minutes} min`:'Permanent';
+    return `<div class="mod-request-card">
+      <div class="mrq-title">${escH(rq.requester.username)} wants to ${rq.action_type.toUpperCase()} ${escH(rq.target.username)}</div>
+      <div class="mrq-meta">${durText}${rq.reason?' · '+escH(rq.reason):''}</div>
+      <div class="mrq-actions">
+        <button class="mrq-approve" onclick="handleModRequestDecision('${esc(rq.id)}','approve')">${icon('check','✅')} Approve</button>
+        <button class="mrq-deny" onclick="handleModRequestDecision('${esc(rq.id)}','deny')">${icon('close','❌')} Deny</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function handleModRequestDecision(requestId,decision){
+  try{
+    const r=await rpc(decision==='approve'?'approve_mod_request':'decline_mod_request',{p_token:token,p_request_id:requestId});
+    if(r&&r.error){showToast(r.error,'error');return;}
+    showToast(decision==='approve'?'Request approved':'Request denied','success');
+    checkPendingModRequests();
+  }catch(e){showToast('Failed to update request','error');}
+}
 async function openModListModal(){
   if(!isMod(me)) return;
   const inServer=active&&active.type==='srv-channel'&&!!activeServerId;
